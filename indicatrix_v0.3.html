@@ -1,0 +1,1239 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniaxial Optical Mineralogy Visualizer</title>
+    <style>
+        /* Theme variables */
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --accent: #4db8ff;
+            --highlight: #ffd700;
+            --border: #333;
+            --mlc-bg: #1a1a1a;
+        }
+
+        /* Base layout and typography */
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Main container uses a two-column split */
+        #container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Left column holds the 3D view (top) and the chart (bottom). */
+        #left-col {
+            width: 50%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+        }
+
+        /* 3D view area. Height is controlled in CSS initially and updated by JS when resized. */
+        #view3d {
+            height: 60%;
+            position: relative;
+            background: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
+            overflow: hidden;
+            min-height: 200px;
+        }
+
+        /* Chart section consumes remaining vertical space in the left column. */
+        #chart-section {
+            flex: 1;
+            background: var(--panel-bg);
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 200px;
+            box-sizing: border-box;
+        }
+
+        /* Michel-Lévy chart container & wrapper */
+        #mlc-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #mlc-container {
+            flex: 1;
+            width: 100%;
+            background-color: var(--mlc-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #444;
+            margin-bottom: 5px;
+        }
+
+        #canvasMLC {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Right column - control panels */
+        #right-col {
+            flex: 1;
+            height: 100vh;
+            overflow-y: auto;
+            background: var(--panel-bg);
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+        }
+
+        /* Generic panel styles */
+        .panel-section {
+            padding: 5px 5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+            .control-group label {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 4px;
+                font-weight: 500;
+                font-size: 0.85rem;
+                color: var(--text-muted);
+            }
+
+            .control-group select, .control-group input[type="number"] {
+                width: 100%;
+                padding: 6px;
+                background: #2a2a2a;
+                border: 1px solid #555;
+                color: white;
+                border-radius: 4px;
+                font-size: 0.9rem;
+            }
+
+        /* Range input appearance */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin-top: 5px;
+        }
+
+            input[type=range]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                height: 16px;
+                width: 16px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                margin-top: -7px;
+            }
+
+            input[type=range]::-webkit-slider-runnable-track {
+                width: 100%;
+                height: 4px;
+                cursor: pointer;
+                background: #555;
+                border-radius: 2px;
+            }
+
+        .visual-split {
+            display: flex;
+            height: 200px;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            background: #eee;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #444;
+        }
+
+        .vis-label {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            color: #000;
+            font-weight: bold;
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.85);
+            padding: 2px 6px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Ensure canvases fill their containers */
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Result statistics grid */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .stat-box {
+            background: #252525;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        /* Interference order display (color swatch + text) */
+        #interference-order-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 6px;
+            height: 36px;
+            font-size: 0.85rem;
+        }
+
+        #interference-order-color {
+            width: 40px;
+            height: 20px;
+            border-radius: 2px;
+            margin-right: 10px;
+            border: 1px solid #555;
+        }
+
+        #interference-order-text {
+            font-weight: bold;
+            color: var(--highlight);
+        }
+
+        /* 3D legend and zoom control overlay */
+        #legend3d {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.8);
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        #zoomControl {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.65);
+            padding: 5px 5px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        /* Splitter bars for resizing */
+        .splitter {
+            background: #333;
+            position: relative;
+            z-index: 50;
+            flex-shrink: 0;
+        }
+
+            .splitter:hover {
+                background: var(--accent);
+                transition: 0.2s;
+            }
+
+        .splitter-h {
+            height: 8px;
+            cursor: row-resize;
+            width: 100%;
+        }
+
+        .splitter-v {
+            width: 8px;
+            cursor: col-resize;
+            height: 100%;
+        }
+
+        /* Formula box and small UI niceties */
+        .formula-box {
+            background: #252525;
+            padding: 5px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #ccc;
+            border-left: 3px solid #888;
+        }
+
+        .formula-row {
+            margin-bottom: 8px;
+        }
+
+        .formula-math {
+            font-family: 'Courier New', monospace;
+            color: var(--highlight);
+            font-weight: bold;
+        }
+
+            .formula-math.blue {
+                color: var(--accent);
+            }
+
+        #credits {
+            position: fixed;
+            bottom: 5px;
+            right: 20px;
+            font-size: 0.7rem;
+            color: #555;
+            pointer-events: none;
+            z-index: 1000;
+            font-style: italic;
+        }
+
+        /* Crosshair overlays used in small preview canvases */
+        .crosshair-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+            .crosshair-overlay::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 0;
+                right: 0;
+                height: 1px;
+                background: rgba(100,100,100,0.5);
+                transform: translateY(-50%);
+            }
+
+            .crosshair-overlay::after {
+                content: "";
+                position: absolute;
+                left: 50%;
+                top: 0;
+                bottom: 0;
+                width: 1px;
+                background: rgba(100,100,100,0.5);
+                transform: translateX(-50%);
+            }
+
+        #indOverlay .crosshair-overlay::before, #indOverlay .crosshair-overlay::after {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="container">
+        <div id="left-col">
+            <div id="view3d">
+                <div id="indOverlay" style="position:absolute; top:5px; right:5px; width:150px; height:150px; background:rgba(20,20,20,0.7); border-radius:6px; border:1px solid #444; pointer-events:none;">
+                    <canvas id="canvasInd" style="width:100%; height:100%;"></canvas>
+                    <div class="crosshair-overlay"></div>
+                </div>
+                <div id="legend3d">
+                    <div class="legend-item"><div class="dot" style="background:red"></div> Optic Axis (C-Axis)</div>
+                    <div class="legend-item"><div class="dot" style="background:cyan"></div> nω (Ordinary)</div>
+                    <div class="legend-item"><div class="dot" style="background:magenta"></div> nε' (Extraordinary)</div>
+                    <div class="legend-item"><div class="dot" style="background:#ffd700"></div> Cutting Plane (tilting)</div>
+                    <div class="legend-item"><div class="dot" style="background:#999999"></div> Basal section (XY)</div>
+                    <div class="legend-item"><div class="dot" style="background:#222222"></div> Principal section (XZ)</div>
+                </div>
+                <div id="zoomControl">
+                    <input id="zoomSlider" type="range" min="0.5" max="1.5" step="0.01" value="1.0" style="width:100px;">
+                    <div id="zoomVal" style="color:#fff; font-size:0.85rem; min-width:40px; text-align:right;">1.00x</div>
+                </div>
+            </div>
+            <div class="splitter splitter-h" id="hSplitter"></div>
+            <div id="chart-section">
+                <h2>Michel-Lévy Interference Chart</h2>
+                <div id="mlc-wrapper">
+                    <div id="mlc-container">
+                        <canvas id="canvasMLC"></canvas>
+                    </div>
+                    <div id="interference-order-display">
+                        <div id="interference-order-color"></div>
+                        <div id="interference-order-text">Black</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="splitter splitter-v" id="vSplitter"></div>
+        <div id="right-col">
+            <div class="panel-section">
+                <h2>Crystal Parameters</h2>
+                <div class="control-group">
+                    <label>Mineral Preset</label>
+                    <select id="presetSel">
+                        <option value="Quartz">Quartz (Low δ)</option>
+                        <option value="Calcite">Calcite (Extreme δ)</option>
+                        <option value="Tourmaline">Tourmaline (High δ)</option>
+                        <option value="Zircon">Zircon (Extreme δ)</option>
+                        <option value="Beryl">Beryl (Low δ)</option>
+                        <option value="Custom">Custom Values...</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <div style="flex:1">
+                        <label style="font-size:0.8rem; color:#aaa;">nω (Omega)</label>
+                        <input type="number" id="nwIn" step="0.001" value="1.544">
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:0.8rem; color:#aaa;">nε (Epsilon)</label>
+                        <input type="number" id="neIn" step="0.001" value="1.553">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>
+                        <span>Cut Angle (θ)</span>
+                        <span id="angleVal" style="color:var(--accent)">0.0°</span>
+                    </label>
+                    <input type="range" id="angleSlide" min="0" max="90" step="0.1" value="0">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); display:flex; justify-content:space-between; margin-top:2px;">
+                        <span>Basal (0°)</span>
+                        <span>Principal (90°)</span>
+                    </div>
+                </div>
+                <div class="control-group" style="margin-bottom:0;">
+                    <label>
+                        <span>Thickness (d)</span>
+                        <span id="thickVal" style="color:var(--highlight)">30 µm</span>
+                    </label>
+                    <input type="range" id="thickSlide" min="10" max="50" step="1" value="30">
+                </div>
+            </div>
+            <div class="panel-section">
+                <h2>Microscope View</h2>
+                <div class="visual-split">
+                    <div class="vis-panel" style="background:white;">
+                        <div class="vis-label">PPL View</div>
+                        <canvas id="canvasPPL"></canvas>
+                        <div class="crosshair-overlay"></div>
+                    </div>
+                    <div class="vis-panel" style="background:black;">
+                        <div class="vis-label">XPL View</div>
+                        <canvas id="canvasXPL"></canvas>
+                        <div class="crosshair-overlay"></div>
+                    </div>
+                </div>
+                <div class="control-group" style="margin-top:5px; margin-bottom:0;">
+                    <label>
+                        <span>Stage Rotation</span>
+                        <span id="stageVal" style="color:var(--accent)">0°</span>
+                    </label>
+                    <input type="range" id="stageSlide" min="0" max="360" step="1" value="0">
+                </div>
+            </div>
+            <div class="panel-section" style="border-bottom: none;">
+                <h2>Calculated Data</h2>
+                <div class="results-grid">
+                    <div class="stat-box">
+                        <span class="stat-label">Apparent Birefringence</span>
+                        <div class="stat-value" id="appBir" style="color: var(--accent)">0.000</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Retardation (Γ)</span>
+                        <div class="stat-value" id="retVal" style="color: var(--highlight)">0 nm</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Max Birefringence</span>
+                        <div class="stat-value" id="maxBir">0.000</div>
+                    </div>
+                </div>
+                <div class="formula-box">
+                    <div class="formula-row">
+                        <strong>Birefringence (δ):</strong> <span class="formula-math blue">δ = |nε' - nω|</span><br>
+                        Difference between the two refractive indices on the cut. Notice the difference between apparent and maximum birefringence.
+                    </div>
+                    <div class="formula-row" style="margin-bottom:0;">
+                        <strong>Retardation (Γ):</strong> <span class="formula-math">Γ = d × δ × 1000</span><br>
+                        Path difference (nm) = Thickness (µm) × Birefringence × 1000. Determines interference color.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="credits">Made by: Yakov Yermakov, 2025</div>
+
+    <script type="module">
+        /*
+         * Indicatrix visualizer - main script
+         * - Uses Three.js for a 3D indicatrix and a 2D canvas for auxiliary previews and the Michel-Lévy chart
+         * - The code is structured into: helpers/constants, 3D scene setup, 2D canvas drawing utilities,
+         *   an `update()` routine that synchronizes UI and scene state, and event listeners.
+         */
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /* -------------------------------
+           Utilities and UI helpers
+           ------------------------------- */
+        function initSplitter(splitterId, type, el1Id, el2Id) {
+            // Makes a horizontal (type='h') or vertical (type='v') draggable splitter.
+            const splitter = document.getElementById(splitterId);
+            const el1 = document.getElementById(el1Id);
+            let isDragging = false;
+
+            splitter.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                document.body.style.cursor = type === 'h' ? 'row-resize' : 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const containerRect = splitter.parentElement.getBoundingClientRect();
+                if (type === 'h') {
+                    // Adjust the height of the top element as a percentage of the parent.
+                    const offset = e.clientY - containerRect.top;
+                    const percentage = (offset / containerRect.height) * 100;
+                    if (percentage > 10 && percentage < 90) el1.style.height = `${percentage}%`;
+                } else {
+                    // Adjust the width of the left column; right column is set to the remainder.
+                    const offset = e.clientX;
+                    const percentage = (offset / window.innerWidth) * 100;
+                    if (percentage > 20 && percentage < 80) {
+                        el1.style.width = `${percentage}%`;
+                        document.getElementById('right-col').style.width = `${100 - percentage}%`;
+                    }
+                }
+                // Trigger a global resize handler so canvases and renderer can update.
+                window.dispatchEvent(new Event('resize'));
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                document.body.style.cursor = 'default';
+                document.body.style.userSelect = 'auto';
+            });
+        }
+        initSplitter('hSplitter', 'h', 'view3d', 'chart-section');
+        initSplitter('vSplitter', 'v', 'left-col', 'right-col');
+
+        /* -------------------------------
+           Color lookup and spectral data
+           ------------------------------- */
+        const COLOR_LUT = [
+            { retardation: 0, color: 'Black', order: '1st order' }, { retardation: 40, color: 'Iron gray', order: '1st order' }, { retardation: 97, color: 'Lavender gray', order: '1st order' }, { retardation: 158, color: 'Gray blue', order: '1st order' }, { retardation: 218, color: 'clear gray', order: '1st order' }, { retardation: 234, color: 'greenish white', order: '1st order' }, { retardation: 259, color: 'nearly pure white', order: '1st order' }, { retardation: 267, color: 'Yellowish white', order: '1st order' }, { retardation: 275, color: 'pale straw yellow', order: '1st order' }, { retardation: 281, color: 'straw yellow', order: '1st order' }, { retardation: 306, color: 'light yellow', order: '1st order' }, { retardation: 332, color: 'bright yellow', order: '1st order' }, { retardation: 430, color: 'brown yellow', order: '1st order' }, { retardation: 505, color: 'red-orange', order: '1st order' }, { retardation: 536, color: 'red', order: '1st order' }, { retardation: 551, color: 'deep red', order: '1st order' }, { retardation: 565, color: 'purple', order: '2nd order' }, { retardation: 575, color: 'violet', order: '2nd order' }, { retardation: 589, color: 'indigo', order: '2nd order' }, { retardation: 664, color: 'sky blue', order: '2nd order' }, { retardation: 728, color: 'greenish blue', order: '2nd order' }, { retardation: 747, color: 'green', order: '2nd order' }, { retardation: 826, color: 'light green', order: '2nd order' }, { retardation: 843, color: 'yellowish green', order: '2nd order' }, { retardation: 866, color: 'greenish yellow', order: '2nd order' }, { retardation: 910, color: 'pure yellow', order: '2nd order' }, { retardation: 948, color: 'orange', order: '2nd order' }, { retardation: 998, color: 'bright orange-red', order: '2nd order' }, { retardation: 1101, color: 'dark violet-red', order: '2nd order' }, { retardation: 1128, color: 'light bluish violet', order: '3rd order' }, { retardation: 1151, color: 'indigo', order: '3rd order' }, { retardation: 1258, color: 'greenish blue', order: '3rd order' }, { retardation: 1334, color: 'sea green', order: '3rd order' }, { retardation: 1376, color: 'lustrous green', order: '3rd order' }, { retardation: 1426, color: 'greenish yellow', order: '3rd order' }, { retardation: 1495, color: 'flesh color', order: '3rd order' }, { retardation: 1534, color: 'carmine red', order: '3rd order' }, { retardation: 1621, color: 'dull purple', order: '3rd order' }, { retardation: 1652, color: 'violet-gray', order: '4th order' }, { retardation: 1682, color: 'Gray blue', order: '4th order' }, { retardation: 1711, color: 'dull sea green', order: '4th order' }, { retardation: 1744, color: 'bluish green', order: '4th order' }
+        ];
+
+        /* Mineral presets: refractive indices, crystal system and sample colors for PPL preview */
+        const minerals = {
+            'Quartz': { nw: 1.544, ne: 1.553, sys: 'hexagonal', colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Calcite': { nw: 1.658, ne: 1.486, sys: 'rhombohedral', colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Tourmaline': { nw: 1.669, ne: 1.638, sys: 'hexagonal', colW: [30, 60, 30], colE: [200, 220, 200] },
+            'Zircon': { nw: 1.923, ne: 1.968, sys: 'tetragonal', colW: [230, 210, 190], colE: [255, 255, 255] },
+            'Beryl': { nw: 1.568, ne: 1.564, sys: 'hexagonal', colW: [180, 230, 220], colE: [220, 240, 255] },
+            'Custom': { nw: 1.500, ne: 1.600, sys: 'hexagonal', colW: [200, 200, 200], colE: [255, 255, 255] }
+        };
+
+        /* CIE 1931 color matching functions (sampled) used to synthesize interference colors */
+        const cie31 = [
+            { l: 380, x: 0.0014, y: 0.0000, z: 0.0065 }, { l: 390, x: 0.0042, y: 0.0001, z: 0.0201 }, { l: 400, x: 0.0143, y: 0.0004, z: 0.0679 }, { l: 410, x: 0.0435, y: 0.0012, z: 0.2074 }, { l: 420, x: 0.1344, y: 0.0040, z: 0.6456 }, { l: 430, x: 0.2839, y: 0.0116, z: 1.3856 }, { l: 440, x: 0.3483, y: 0.0230, z: 1.7471 }, { l: 450, x: 0.3362, y: 0.0380, z: 1.7721 }, { l: 460, x: 0.2908, y: 0.0600, z: 1.6692 }, { l: 470, x: 0.1954, y: 0.0910, z: 1.2876 }, { l: 480, x: 0.0956, y: 0.1390, z: 0.8130 }, { l: 490, x: 0.0320, y: 0.2080, z: 0.4652 }, { l: 500, x: 0.0049, y: 0.3230, z: 0.2720 }, { l: 510, x: 0.0093, y: 0.5030, z: 0.1582 }, { l: 520, x: 0.0633, y: 0.7100, z: 0.0782 }, { l: 530, x: 0.1655, y: 0.8620, z: 0.0422 }, { l: 540, x: 0.2904, y: 0.9540, z: 0.0203 }, { l: 550, x: 0.4334, y: 0.9950, z: 0.0087 }, { l: 560, x: 0.5945, y: 0.9950, z: 0.0039 }, { l: 570, x: 0.7621, y: 0.9520, z: 0.0021 }, { l: 580, x: 0.9163, y: 0.8700, z: 0.0017 }, { l: 590, x: 1.0263, y: 0.7570, z: 0.0011 }, { l: 600, x: 1.0622, y: 0.6310, z: 0.0008 }, { l: 610, x: 1.0026, y: 0.5030, z: 0.0003 }, { l: 620, x: 0.8544, y: 0.3810, z: 0.0002 }, { l: 630, x: 0.6424, y: 0.2650, z: 0.0000 }, { l: 640, x: 0.4479, y: 0.1750, z: 0.0000 }, { l: 650, x: 0.2835, y: 0.1070, z: 0.0000 }, { l: 660, x: 0.1649, y: 0.0610, z: 0.0000 }, { l: 670, x: 0.0874, y: 0.0320, z: 0.0000 }, { l: 680, x: 0.0468, y: 0.0170, z: 0.0000 }, { l: 690, x: 0.0227, y: 0.0082, z: 0.0000 }, { l: 700, x: 0.0114, y: 0.0041, z: 0.0000 }, { l: 720, x: 0.0029, y: 0.0010, z: 0.0000 }, { l: 740, x: 0.0007, y: 0.0002, z: 0.0000 }, { l: 760, x: 0.0002, y: 0.0001, z: 0.0000 }
+        ];
+
+        // Cache for interference color lookups to avoid repeated spectral synthesis
+        const colorCache = new Map();
+
+        /* Linear interpolation between two RGB triplets */
+        function lerpColor(c1, c2, t) {
+            t = Math.max(0, Math.min(1, t));
+            return [
+                Math.round(c1[0] + (c2[0] - c1[0]) * t),
+                Math.round(c1[1] + (c2[1] - c1[1]) * t),
+                Math.round(c1[2] + (c2[2] - c1[2]) * t)
+            ];
+        }
+
+        /* sRGB companding (linear -> sRGB) */
+        function sRGBCompanding(v) {
+            if (v <= 0.0031308) return 12.92 * v;
+            return 1.055 * Math.pow(v, 1.0 / 2.4) - 0.055;
+        }
+
+        /* Convert a retardation (nm) into an approximate RGB color by integrating
+           the interference intensity across the sampled CIE 1931 functions.
+           This is an approximation used for visualizing the Michel-Lévy chart. */
+        function calculateColor(retardationNM) {
+            let X = 0, Y = 0, Z = 0;
+            for (let i = 0; i < cie31.length; i++) {
+                const lam = cie31[i].l;
+                const theta = (Math.PI * retardationNM) / lam;
+                const intensity = Math.sin(theta) * Math.sin(theta);
+                X += intensity * cie31[i].x;
+                Y += intensity * cie31[i].y;
+                Z += intensity * cie31[i].z;
+            }
+            // scale to keep values in a reasonable range for the RGB transform
+            const scale = 0.075;
+            X *= scale; Y *= scale; Z *= scale;
+
+            // Convert XYZ to linear RGB (approximate matrix)
+            let r = 2.04414 * X - 0.5649 * Y - 0.3447 * Z;
+            let g = -0.9693 * X + 1.8760 * Y + 0.0416 * Z;
+            let b = 0.0134 * X - 0.1184 * Y + 1.0154 * Z;
+
+            // clamp, compand and convert to 8-bit
+            r = Math.min(1, Math.max(0, r)); g = Math.min(1, Math.max(0, g)); b = Math.min(1, Math.max(0, b));
+            r = sRGBCompanding(r); g = sRGBCompanding(g); b = sRGBCompanding(b);
+            return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+        }
+
+        /* Public function: returns an interference color string for a given retardation (nm).
+           Uses a simple cache to speed up repeated lookups. */
+        function getInterferenceColor(ret) {
+            const r = Math.round(ret);
+            if (r < 0) return 'rgb(0,0,0)';
+            if (r === 0) return 'rgb(0,0,0)';
+            if (r > 3500) return 'rgb(250,250,250)';
+            if (colorCache.has(r)) return colorCache.get(r);
+            const col = calculateColor(r);
+            colorCache.set(r, col);
+            return col;
+        }
+
+        /* Find the best matching color name / order from the lookup table */
+        function getOrderName(nm) {
+            if (nm > COLOR_LUT[COLOR_LUT.length - 1].retardation) return "High Order White";
+            for (let i = COLOR_LUT.length - 1; i >= 0; i--) {
+                const entry = COLOR_LUT[i];
+                if (nm >= entry.retardation) return `${entry.color} (${entry.order})`;
+            }
+            return "Black (1st order)";
+        }
+
+        /* Generate polygon points for grain previews in PPL/XPL based on crystal system and cut angle.
+           The points are returned in normalized coordinates and scaled by the caller. */
+        function getGrainPoints(system, angleDeg) {
+            const t = angleDeg / 90;
+            const lerp = (start, end) => start + (end - start) * t;
+            const points = [];
+            if (system === 'hexagonal') {
+                const hex = [{ x: 0, y: -1 }, { x: 0.866, y: -0.5 }, { x: 0.866, y: 0.5 }, { x: 0, y: 1 }, { x: -0.866, y: 0.5 }, { x: -0.866, y: -0.5 }];
+                const rect = [{ x: 0, y: -2 }, { x: 0.866, y: -2 }, { x: 0.866, y: 2 }, { x: 0, y: 2 }, { x: -0.866, y: 2 }, { x: -0.866, y: -2 }];
+                for (let i = 0; i < 6; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else if (system === 'tetragonal') {
+                const sq = [{ x: -0.7, y: -0.7 }, { x: 0.7, y: -0.7 }, { x: 0.7, y: 0.7 }, { x: -0.7, y: 0.7 }];
+                const rect = [{ x: -0.7, y: -2 }, { x: 0.7, y: -2 }, { x: 0.7, y: 2 }, { x: -0.7, y: 2 }];
+                for (let i = 0; i < 4; i++) points.push({ x: lerp(sq[i].x, rect[i].x), y: lerp(sq[i].y, rect[i].y) });
+            } else {
+                const rhomb = [{ x: 0, y: -1 }, { x: 0.8, y: 0 }, { x: 0, y: 1 }, { x: -0.8, y: 0 }];
+                const longRhomb = [{ x: 0.5, y: -2 }, { x: 0.8, y: 0.5 }, { x: -0.5, y: 2 }, { x: -0.8, y: -0.5 }];
+                for (let i = 0; i < 4; i++) points.push({ x: lerp(rhomb[i].x, longRhomb[i].x), y: lerp(rhomb[i].y, longRhomb[i].y) });
+            }
+            return points;
+        }
+
+
+        /* -------------------------------
+           3D Scene setup (Three.js)
+           ------------------------------- */
+        const view3d = document.getElementById('view3d');
+        if (!view3d) { console.error("The 'view3d' element was not found."); }
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(40, view3d.clientWidth / view3d.clientHeight, 0.1, 100);
+        camera.position.set(4, 3, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(view3d.clientWidth, view3d.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        view3d.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = false;
+        controls.enableZoom = false;
+        controls.target.set(-0.5, 0, 0);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // Group that represents the indicatrix (ellipsoid + optic axis)
+        const indicatrixGroup = new THREE.Group();
+        indicatrixGroup.position.x = -0.5;
+        scene.add(indicatrixGroup);
+
+        // Helper: make a unit circle/ellipse group (mesh + outline) that can be scaled later.
+        function makeUnitEllipse(color = 0x777777, opacity = 0.12, segments = 128) {
+            const shape = new THREE.Shape();
+            for (let i = 0; i <= segments; i++) {
+                const t = (i / segments) * Math.PI * 2;
+                shape.lineTo(Math.cos(t), Math.sin(t));
+            }
+            const geom = new THREE.ShapeGeometry(shape);
+            const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false });
+            const mesh = new THREE.Mesh(geom, mat);
+
+            const pts = shape.getPoints(segments);
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const outline = new THREE.LineLoop(lineGeo, new THREE.LineBasicMaterial({ color }));
+
+            const grp = new THREE.Group();
+            grp.add(mesh);
+            grp.add(outline);
+            return grp;
+        }
+
+        // Basal (XY) and principal (XZ) reference sections for visualization.
+        const basalSection = makeUnitEllipse(0x999999, 0.12);
+        basalSection.renderOrder = 0;
+        basalSection.position.copy(indicatrixGroup.position);
+        scene.add(basalSection);
+
+        const principalSection = makeUnitEllipse(0x222222, 0.12);
+        principalSection.rotation.x = Math.PI / 2;
+        principalSection.renderOrder = 0;
+        principalSection.position.copy(indicatrixGroup.position);
+        scene.add(principalSection);
+
+        // Ellipsoid (visual) representing the indicatrix
+        const sphereMat = new THREE.MeshPhongMaterial({ color: 0x00aaff, transparent: true, opacity: 0.4, shininess: 80, side: THREE.DoubleSide, depthWrite: false });
+        const ellipsoid = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), sphereMat);
+        indicatrixGroup.add(ellipsoid);
+
+        // Optic axis (small red cylinder)
+        const cAxisGeo = new THREE.CylinderGeometry(0.02, 0.02, 2, 6);
+        const cAxisMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const opticAxis = new THREE.Mesh(cAxisGeo, cAxisMat);
+        opticAxis.rotation.z = 0;  // aligned with Y by default
+        indicatrixGroup.add(opticAxis);
+
+
+        // Plane group represents the cutting plane (tilted) and associated arrows/outline.
+        const planeGroup = new THREE.Group();
+        planeGroup.position.x = -0.5;
+        scene.add(planeGroup);
+
+        // A unit circle mesh that will be scaled to an ellipse in update()
+        const planeGeo = new THREE.CircleGeometry(1, 64);
+        const planeMesh = new THREE.Mesh(planeGeo, new THREE.MeshBasicMaterial({ color: 0xffd700, side: THREE.DoubleSide, transparent: true, opacity: 0.2, depthWrite: false }));
+        planeGroup.add(planeMesh);
+
+        // Outline for the cut (LineLoop). Geometry replaced in update().
+        const cutOutlineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2, depthTest: false, depthWrite: false });
+        const cutOutline = new THREE.LineLoop(new THREE.BufferGeometry(), cutOutlineMat);
+        planeGroup.add(cutOutline);
+
+        // Small arrow builder used to show local nω and nε' directions on the cut plane.
+        function makeArrow(color) {
+            const group = new THREE.Group();
+
+            const shaft = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.02, 0.02, 1, 6),
+                new THREE.MeshBasicMaterial({ color })
+            );
+            shaft.position.y = 0.5;
+            group.add(shaft);
+
+            const head = new THREE.Mesh(
+                new THREE.ConeGeometry(0.08, 0.125, 6),
+                new THREE.MeshBasicMaterial({ color })
+            );
+            head.position.y = 1.0;
+            group.add(head);
+
+            // orient arrow so its default local +Y corresponds to visual arrow direction
+            group.rotation.x = Math.PI / 2;
+
+            return group;
+        }
+
+        const arrowOmega = makeArrow(0x00ffff);
+        const arrowEPrime = makeArrow(0xff00ff);
+        planeGroup.add(arrowOmega);
+        planeGroup.add(arrowEPrime);
+
+        /* -------------------------------
+           Application state
+           ------------------------------- */
+        const quartz = minerals.Quartz;
+        const state = {
+            nw: quartz.nw,
+            ne: quartz.ne,
+            angle: 0,           // cut angle (degrees between basal and principal)
+            thickness: 30,      // sample thickness (µm)
+            stage: 0,           // stage rotation (degrees)
+            scaleFactor: 1.0,   // visual zoom factor for indicatrix
+            system: quartz.sys, // crystal system for previews
+            colW: quartz.colW,  // PPL color for omega
+            colE: quartz.colE   // PPL color for epsilon
+        };
+
+        /* -------------------------------
+           2D canvas helpers and drawing
+           ------------------------------- */
+        const cvInd = document.getElementById('canvasInd'); const ctxInd = cvInd?.getContext('2d');
+        const cvPPL = document.getElementById('canvasPPL'); const ctxPPL = cvPPL?.getContext('2d');
+        const cvXPL = document.getElementById('canvasXPL'); const ctxXPL = cvXPL?.getContext('2d');
+        const cvMLC = document.getElementById('canvasMLC'); const ctxMLC = cvMLC?.getContext('2d');
+
+        /* Resize a canvas to match its CSS size and device pixel ratio. Returns logical width/height. */
+        function resizeCanvas(canvas, ctx) {
+            if (!canvas) return { w: 100, h: 100 };
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0) return { w: 100, h: 100 };
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            if (ctx) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr); }
+            return { w: rect.width, h: rect.height };
+        }
+
+        /* Draw 2D indicatrix preview (small overlay) showing the ellipse and local axes.
+           rx, ry are refractive lengths (nω and nε' equivalent) in the same units. */
+        function drawInd2D(rx, ry) {
+            if (!ctxInd) return;
+            const { w, h } = resizeCanvas(cvInd, ctxInd);
+            const cx = w / 2, cy = h / 2;
+            ctxInd.clearRect(0, 0, w, h);
+
+            // scale ellipse to fit available preview area
+            const maxAxis = Math.max(Math.abs(rx), Math.abs(ry), 0.0001);
+            const avail = Math.min(w, h) / 2 * 0.8;
+            const scale = avail / maxAxis;
+            const srx = rx * scale; const sry = ry * scale;
+            const stageRad = state.stage * Math.PI / 180;
+
+            ctxInd.save();
+            ctxInd.translate(cx, cy);
+            ctxInd.rotate(stageRad);
+
+            ctxInd.beginPath(); ctxInd.ellipse(0, 0, srx, sry, 0, 0, Math.PI * 2);
+            ctxInd.lineWidth = 2; ctxInd.strokeStyle = '#aaa'; ctxInd.stroke();
+            ctxInd.fillStyle = 'rgba(0,100,255,0.1)'; ctxInd.fill();
+
+            const head = 8;
+            // nΩ arrow (cyan) — radius along local +X
+            ctxInd.strokeStyle = 'cyan';
+            ctxInd.lineWidth = 2;
+            ctxInd.beginPath(); ctxInd.moveTo(0, 0); ctxInd.lineTo(srx, 0); ctxInd.stroke();
+            // arrow head
+            ctxInd.beginPath(); ctxInd.moveTo(srx, 0); ctxInd.lineTo(srx - head, -head / 2); ctxInd.lineTo(srx - head, head / 2); ctxInd.closePath(); ctxInd.stroke();
+
+            // nε' arrow (magenta) — radius along local -Y (convention used here)
+            ctxInd.strokeStyle = 'magenta';
+            ctxInd.beginPath(); ctxInd.moveTo(0, 0); ctxInd.lineTo(0, -sry); ctxInd.stroke();
+            // arrow head
+            ctxInd.beginPath(); ctxInd.moveTo(0, -sry); ctxInd.lineTo(-head / 2, -sry + head); ctxInd.lineTo(head / 2, -sry + head); ctxInd.closePath(); ctxInd.stroke();
+
+            // Labels for the numeric values on each axis
+            ctxInd.font = 'bold 14px sans-serif';
+            ctxInd.save();
+            ctxInd.translate(srx / 2, 20);
+            ctxInd.rotate(-stageRad);
+            ctxInd.fillStyle = 'cyan'; ctxInd.textAlign = 'center'; ctxInd.textBaseline = 'middle';
+            ctxInd.fillText(`${rx.toFixed(3)}`, 0, 0);
+            ctxInd.restore();
+
+            ctxInd.save();
+            ctxInd.translate(-25, -sry / 2);
+            ctxInd.rotate(-stageRad);
+            ctxInd.fillStyle = 'magenta'; ctxInd.textAlign = 'center'; ctxInd.textBaseline = 'middle';
+            ctxInd.fillText(`${ry.toFixed(3)}`, 0, 0);
+            ctxInd.restore();
+
+            ctxInd.restore();
+        }
+
+        /* Draw a PPL preview: a filled polygon approximating a grain with blended PPL colors.
+           system - crystal system string, angle - cut angle in degrees. */
+        function drawPPL(system, angle) {
+            if (!ctxPPL) return;
+            const { w, h } = resizeCanvas(cvPPL, ctxPPL);
+            const cx = w / 2, cy = h / 2;
+            ctxPPL.clearRect(0, 0, w, h);
+
+            const t_cut = angle / 90;
+            const colEPrime = lerpColor(state.colW, state.colE, t_cut);
+            const stageRad = state.stage * Math.PI / 180;
+            const intensityOmega = Math.cos(stageRad) ** 2;
+            const intensityEPrime = Math.sin(stageRad) ** 2;
+
+            const r = Math.round((state.colW[0] * intensityOmega + colEPrime[0] * intensityEPrime));
+            const g = Math.round((state.colW[1] * intensityOmega + colEPrime[1] * intensityEPrime));
+            const b = Math.round((state.colW[2] * intensityOmega + colEPrime[2] * intensityEPrime));
+
+            const colorStr = `rgb(${r}, ${g}, ${b})`;
+            const scale = Math.min(w, h) * 0.25;
+            const points = getGrainPoints(system, angle);
+
+            ctxPPL.save(); ctxPPL.translate(cx, cy); ctxPPL.rotate(stageRad);
+            ctxPPL.beginPath(); ctxPPL.moveTo(points[0].x * scale, points[0].y * scale);
+            for (let i = 1; i < points.length; i++) ctxPPL.lineTo(points[i].x * scale, points[i].y * scale);
+            ctxPPL.closePath();
+            ctxPPL.fillStyle = colorStr; ctxPPL.fill();
+            ctxPPL.lineWidth = 2; ctxPPL.strokeStyle = '#444'; ctxPPL.stroke();
+            ctxPPL.restore();
+        }
+
+        /* Draw an XPL preview: stack a number of thin layers representing varying retardation
+           to approximate interference colors within the grain shape. */
+        function drawXPL(bir, system, angle) {
+            if (!ctxXPL) return;
+            const { w, h } = resizeCanvas(cvXPL, ctxXPL);
+            const cx = w / 2, cy = h / 2;
+            ctxXPL.clearRect(0, 0, w, h);
+
+            const points = getGrainPoints(system, angle);
+            const baseScale = Math.min(w, h) * 0.25;
+            const maxThickness = state.thickness;
+            const extinction = Math.sin(2 * state.stage * Math.PI / 180) ** 2;
+
+            ctxXPL.save(); ctxXPL.translate(cx, cy); ctxXPL.rotate(state.stage * Math.PI / 180);
+
+            for (let d = 1; d <= maxThickness; d++) {
+                const ret = d * bir * 1000;
+                const rawColorStr = getInterferenceColor(ret);
+                const match = rawColorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                if (!match) continue;
+                let r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3]);
+                // apply extinction (simulates analyzer extinction)
+                r = Math.round(r * extinction); g = Math.round(g * extinction); b = Math.round(b * extinction);
+
+                const thicknessFraction = d / maxThickness;
+                const currentScale = 1.0 - (0.2 * thicknessFraction);
+
+                ctxXPL.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctxXPL.lineWidth = 0;
+                ctxXPL.beginPath();
+                const layerScale = baseScale * currentScale;
+                ctxXPL.moveTo(points[0].x * layerScale, points[0].y * layerScale);
+                for (let i = 1; i < points.length; i++) ctxXPL.lineTo(points[i].x * layerScale, points[i].y * layerScale);
+                ctxXPL.closePath();
+                ctxXPL.fill();
+
+                if (d === 1) { ctxXPL.lineWidth = 2; ctxXPL.strokeStyle = '#aaa'; ctxXPL.stroke(); }
+            }
+            ctxXPL.restore();
+        }
+
+        /* Michel-Lévy chart drawing: caches a single-row canvas of colors and scales it to the chart area.
+           Draws birefringence guide lines, scale ticks and a movable marker for current ret / thickness. */
+        let mlcCache = null;
+        function drawMLChart(ret, thk, bir) {
+            if (!ctxMLC) return;
+            const { w, h } = resizeCanvas(cvMLC, ctxMLC);
+            const mLeft = 50, mBot = 30, mTop = 10, mRight = 10;
+            const chW = w - mLeft - mRight, chH = h - mBot - mTop;
+            const maxRet = 1800, maxThk = 50;
+            if (chW <= 0 || chH <= 0) return;
+
+            // Cache a horizontal color bar at the required width to avoid recalculating per frame.
+            if (!mlcCache || mlcCache.width !== Math.floor(chW)) {
+                const tempCan = document.createElement('canvas');
+                tempCan.width = chW; tempCan.height = 1;
+                const tempCtx = tempCan.getContext('2d');
+                const id = tempCtx.createImageData(chW, 1);
+                const rowColors = new Uint8Array(Math.floor(chW) * 4);
+                for (let x = 0; x < chW; x++) {
+                    const nm = (x / chW) * maxRet;
+                    const colStr = getInterferenceColor(nm);
+                    const parts = colStr.match(/\d+/g)?.map(Number) || [0, 0, 0];
+                    rowColors[x * 4] = parts[0]; rowColors[x * 4 + 1] = parts[1]; rowColors[x * 4 + 2] = parts[2]; rowColors[x * 4 + 3] = 255;
+                }
+                id.data.set(rowColors);
+                tempCtx.putImageData(id, 0, 0);
+                mlcCache = tempCan;
+            }
+
+            ctxMLC.clearRect(0, 0, w, h);
+            ctxMLC.fillStyle = '#222'; ctxMLC.fillRect(0, 0, w, h);
+            ctxMLC.imageSmoothingEnabled = false;
+            ctxMLC.drawImage(mlcCache, mLeft, mTop, chW, chH);
+
+            // draw birefringence guide lines and labels
+            ctxMLC.save(); ctxMLC.beginPath(); ctxMLC.rect(mLeft, mTop, chW, chH); ctxMLC.clip();
+            const birLines = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.05, 0.06, 0.08, 0.1, 0.15, 0.2];
+            ctxMLC.lineWidth = 1; ctxMLC.strokeStyle = 'rgba(255,255,255,0.4)'; ctxMLC.font = 'bold 12px sans-serif';
+            birLines.forEach(b => {
+                const thickAtMaxRet = maxRet / (b * 1000);
+                let ex, ey;
+                ctxMLC.fillStyle = '#ddd';
+                if (thickAtMaxRet <= maxThk) {
+                    ex = mLeft + chW; ey = mTop + chH - (thickAtMaxRet / maxThk) * chH;
+                    ctxMLC.textAlign = 'right'; ctxMLC.fillText(b.toFixed(3), ex - 2, ey - 2);
+                } else {
+                    const retAtMaxThick = maxThk * b * 1000;
+                    ex = mLeft + (retAtMaxThick / maxRet) * chW; ey = mTop;
+                    ctxMLC.textAlign = 'center'; ctxMLC.fillText(b.toFixed(3), ex, ey + 12);
+                }
+                ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, mTop + chH); ctxMLC.lineTo(ex, ey); ctxMLC.stroke();
+            });
+            ctxMLC.restore();
+
+            // chart axes and ticks
+            ctxMLC.strokeStyle = '#555'; ctxMLC.strokeRect(mLeft, mTop, w - mLeft - mRight, h - mTop - mBot);
+            ctxMLC.fillStyle = '#ddd'; ctxMLC.font = 'bold 12px sans-serif'; ctxMLC.textAlign = 'center';
+            for (let r = 0; r <= maxRet; r += 200) {
+                const x = mLeft + (r / maxRet) * chW;
+                ctxMLC.beginPath(); ctxMLC.moveTo(x, mTop + chH); ctxMLC.lineTo(x, mTop + chH + 6); ctxMLC.stroke();
+                ctxMLC.fillText(r, x, mTop + chH + 18);
+            }
+
+            // order separators and thickness ticks
+            ctxMLC.fillStyle = 'red';
+            const orderSeparators = [551, 1102, 1653, 2204, 2755, 3306];
+            orderSeparators.forEach(sep => {
+                const x = mLeft + (sep / maxRet) * chW;
+                ctxMLC.beginPath(); ctxMLC.arc(x, mTop + chH + 12, 3, 0, Math.PI * 2); ctxMLC.fill();
+            });
+
+            ctxMLC.textAlign = 'right';
+            for (let t = 0; t <= maxThk; t += 10) {
+                const y = mTop + chH - (t / maxThk) * chH;
+                ctxMLC.fillStyle = '#ddd';
+                ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, y); ctxMLC.lineTo(mLeft - 6, y); ctxMLC.stroke();
+                ctxMLC.fillText(t, mLeft - 8, y + 4);
+            }
+
+            // draw current ret/thickness marker if inside bounds
+            if (ret <= maxRet && thk <= maxThk) {
+                const mx = mLeft + (ret / maxRet) * chW;
+                const my = mTop + chH - (thk / maxThk) * chH;
+                ctxMLC.strokeStyle = 'red'; ctxMLC.lineWidth = 2;
+                ctxMLC.beginPath(); ctxMLC.moveTo(mx, mTop); ctxMLC.lineTo(mx, mTop + chH); ctxMLC.stroke();
+                ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, my); ctxMLC.lineTo(mLeft + chW, my); ctxMLC.stroke();
+                ctxMLC.fillStyle = 'red'; ctxMLC.beginPath(); ctxMLC.arc(mx, my, 4, 0, Math.PI * 2); ctxMLC.fill();
+            }
+        }
+
+        /* -------------------------------
+           Main update routine - computes optical quantities and synchronizes the UI and scene
+           ------------------------------- */
+        function update() {
+            // Calculate refractive index on the cut using the uniaxial indicatrix formula
+            const rad = state.angle * (Math.PI / 180);
+            const cos = Math.cos(rad); const sin = Math.sin(rad);
+            const term = (cos * cos) / (state.nw * state.nw) + (sin * sin) / (state.ne * state.ne);
+            const nPrime = Math.sqrt(1 / term);
+
+            // apparent birefringence on the cut and the maximum birefringence
+            const bir = Math.abs(nPrime - state.nw);
+            const maxBir = Math.abs(state.ne - state.nw);
+
+            // retardation in nm (thickness in µm × birefringence × 1000)
+            const retardation = state.thickness * bir * 1000;
+            const colorStr = getInterferenceColor(retardation);
+            const name = getOrderName(retardation);
+
+            // Update UI elements (values and color swatch)
+            document.getElementById('angleVal').innerText = state.angle.toFixed(1) + "°";
+            document.getElementById('thickVal').innerText = state.thickness + " µm";
+            document.getElementById('stageVal').innerText = state.stage.toFixed(0) + "°";
+            document.getElementById('appBir').innerText = bir.toFixed(4);
+            document.getElementById('maxBir').innerText = maxBir.toFixed(4);
+            document.getElementById('retVal').innerText = Math.round(retardation) + " nm";
+            const colBox = document.getElementById('interference-order-color');
+            if (colBox) colBox.style.backgroundColor = colorStr;
+            const textElement = document.getElementById('interference-order-text');
+            if (textElement) textElement.innerText = name;
+            
+            // 3D indicatrix scaling
+            const sX = state.nw * state.scaleFactor;
+            const sY = state.ne * state.scaleFactor;
+            indicatrixGroup.scale.set(sX, sY, sX);
+
+            // Plane tilt (cut angle)
+            const cutRot = (Math.PI / 2) - rad;
+            planeGroup.rotation.x = cutRot;
+            
+            const stageRad = state.stage * (Math.PI / 180);
+            
+            // Semi-axes of the elliptical cut (used for scaling the plane mesh and drawing outline)
+            const rX_cut = state.nw * state.scaleFactor;    // nω direction length (local X)
+            const rY_cut = nPrime * state.scaleFactor;      // nε' direction length (local Y)
+
+            // Scale the plane mesh (unit circle) to match the ellipse of intersection
+            planeMesh.scale.set(rX_cut, rY_cut, 1);
+
+            // Generate the outline points for the ellipse to render as a LineLoop
+            const intersectionPoints = [];
+            const segments = 128;
+            const outlineZ = 0.01; // Small offset to reduce Z-fighting with the plane mesh
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                const x = rX_cut * Math.cos(theta);
+                const y = rY_cut * Math.sin(theta);
+                intersectionPoints.push(new THREE.Vector3(x, y, outlineZ));
+            }
+            cutOutline.geometry.setFromPoints(intersectionPoints);
+
+            // Keep outline world-aligned in plane-local coordinates (no extra z-rotation applied here)
+            cutOutline.rotation.z = 0;
+
+            // Update basal/principal references so they stay aligned with the indicatrix center
+            const center = indicatrixGroup.position.clone();
+
+            // basal: circle in XY with radius = nω
+            const basalRadius = state.nw * state.scaleFactor;
+            basalSection.position.copy(center);
+            basalSection.rotation.set(Math.PI / 2, 0, 0);
+            basalSection.scale.set(basalRadius, basalRadius, 1);
+
+            // principal: ellipse projected into XZ with radii (nω, nε)
+            const principalRx = state.nw * state.scaleFactor;
+            const principalRz = state.ne * state.scaleFactor;
+            principalSection.position.copy(center);
+            principalSection.rotation.set(0, 0, 0);
+            principalSection.scale.set(principalRx, principalRz, 1);
+
+            // Arrows are positioned inside the plane group and scaled to indicate axis lengths
+            arrowOmega.position.set(0, 0, 0);
+            arrowOmega.rotation.set(0, 0, 0);
+            arrowOmega.scale.set(rX_cut, rX_cut, rX_cut);
+            arrowOmega.rotation.z = Math.PI / 2;
+
+            arrowEPrime.position.set(0, 0, 0);
+            arrowEPrime.rotation.set(0, 0, 0);
+            arrowEPrime.scale.set(rY_cut, rY_cut, rY_cut);
+            // note: arrowOmega.rotation.z intentionally set twice in original code (kept for parity)
+            arrowOmega.rotation.z = Math.PI / 2;
+
+            // Redraw 2D previews and chart
+            drawInd2D(state.nw, nPrime);
+            drawPPL(state.system, state.angle);
+            drawXPL(bir, state.system, state.angle);
+            drawMLChart(retardation, state.thickness, bir);
+        }
+
+        /* -------------------------------
+           Event listeners and bindings
+           ------------------------------- */
+        document.getElementById('presetSel').addEventListener('change', e => {
+            if (e.target.value !== 'Custom') {
+                const m = minerals[e.target.value];
+                state.nw = m.nw; state.ne = m.ne; state.system = m.sys;
+                state.colW = m.colW; state.colE = m.colE;
+                document.getElementById('nwIn').value = m.nw;
+                document.getElementById('neIn').value = m.ne;
+                update();
+            }
+        });
+
+        ['nwIn', 'neIn'].forEach(id => {
+            document.getElementById(id).addEventListener('input', e => {
+                if (id === 'nwIn') state.nw = parseFloat(e.target.value) || 1.0;
+                if (id === 'neIn') state.ne = parseFloat(e.target.value) || 1.0;
+                document.getElementById('presetSel').value = 'Custom';
+                state.system = 'hexagonal'; state.colW = minerals.Custom.colW; state.colE = minerals.Custom.colE;
+                update();
+            });
+        });
+
+        document.getElementById('angleSlide').addEventListener('input', e => { state.angle = parseFloat(e.target.value); update(); });
+        document.getElementById('thickSlide').addEventListener('input', e => { state.thickness = parseFloat(e.target.value); update(); });
+        document.getElementById('stageSlide').addEventListener('input', e => { state.stage = parseFloat(e.target.value); update(); });
+        document.getElementById('zoomSlider').addEventListener('input', e => {
+            state.scaleFactor = parseFloat(e.target.value);
+            document.getElementById('zoomVal').innerText = `${state.scaleFactor.toFixed(2)}x`;
+            update();
+        });
+
+        window.addEventListener('resize', () => {
+            if (view3d) {
+                camera.aspect = view3d.clientWidth / view3d.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(view3d.clientWidth, view3d.clientHeight);
+            }
+            // clear cached ML chart when canvas size changes
+            mlcCache = null; update();
+        });
+
+        /* Animation loop */
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // initial draw + start loop
+        update();
+        animate();
+    </script>
+</body>
+</html>
