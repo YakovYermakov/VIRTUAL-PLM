@@ -12,6 +12,7 @@ You can download it and open it in any modern browser - on a computer, tablet, o
 ## 1. Indicatrix
 
 <img width="931" height="459" alt="image" src="https://github.com/user-attachments/assets/65fcc31f-5bf6-4dc9-9507-78289965f490" />
+
 The first section of the tool shows the 3D indicatrix generated from the mineral’s refractive indices.
 Currently, the tool supports isotropic and uniaxial indicatrices (biaxial support may be added later). 
 This view also displays:
@@ -29,6 +30,7 @@ For convenience, you can zoom the entire 3D setup using the slider below the 3D 
 ## 2. Michel-Lévy Chart
 
 <img width="938" height="453" alt="image" src="https://github.com/user-attachments/assets/1a37bb5a-f423-4ea3-9815-1d61f30d8426" />
+
 The bottom-left section contains an interactive Michel-Lévy interference color chart, calculated following Sørensen ( 2012).
 This chart has a red marker that dynamically shows you the current interference color visible in the mineral.
 This module helps visualize how birefringence and thickness combine to produce observable colors.
@@ -38,6 +40,7 @@ This module helps visualize how birefringence and thickness combine to produce o
 ## 3. Mineral Parameters
 
 <img width="927" height="126" alt="image" src="https://github.com/user-attachments/assets/58c90570-fec1-4be5-a8d1-8e45bc2114af" />
+
 Here you can choose from several built-in uniaxial minerals:
 - Quartz
 - Calcite
@@ -48,6 +51,7 @@ Here you can choose from several built-in uniaxial minerals:
 Each preset provides refractive indices and different mineral appearances in the microscope view (relief, PPL colors, and pleochroism).
 For demonstration purposes, you can also manually customize nω and nε values.
 <img width="927" height="122" alt="image" src="https://github.com/user-attachments/assets/f026c8c3-d959-4b83-8b3a-9b42d401f795" />
+
 In this section, you can also change the indicatrix cut angle and thickness. These two sliders are the most important controls in this tool, and will and will help demonstrate what kind of interference colors you can see in the mineral you choose. 
 
 ---
@@ -75,6 +79,7 @@ The slider below allows you to rotate the virtual stage.
 ## 5. Calculated Data
 
 <img width="927" height="187" alt="image" src="https://github.com/user-attachments/assets/e8b9c2fb-f098-418f-afb0-b570df76296d" />
+
 The last panel displays real-time computed parameters:
 - Apparent birefringence (δ′ for your cut)
 - Maximum birefringence (|nε − nω|)
