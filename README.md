@@ -50,6 +50,7 @@ Here you can choose from several built-in uniaxial minerals:
 
 Each preset provides refractive indices and different mineral appearances in the microscope view (relief, PPL colors, and pleochroism).
 For demonstration purposes, you can also manually customize nω and nε values.
+
 <img width="927" height="122" alt="image" src="https://github.com/user-attachments/assets/f026c8c3-d959-4b83-8b3a-9b42d401f795" />
 
 In this section, you can also change the indicatrix cut angle and thickness. These two sliders are the most important controls in this tool, and will and will help demonstrate what kind of interference colors you can see in the mineral you choose. 
@@ -59,6 +60,7 @@ In this section, you can also change the indicatrix cut angle and thickness. The
 ## 4. Microscope Simulation (PPL & XPL)
 Two visualization panels simulate the appearance of a mineral grain under Plane- and Cross-Polarized Light. 
 The crosshairs here represent the allowed light vibration directions in the polarizer and analyzer.
+
 <img width="925" height="234" alt="image" src="https://github.com/user-attachments/assets/5bba03b8-2945-4321-9953-08db8a270600" />
 
 For better experience, I aimed to make it close to realistic observations in a polarized microscope: 
@@ -69,9 +71,11 @@ For better experience, I aimed to make it close to realistic observations in a p
 - Minerals have extinction (parallel for uniaxial minerals in this tool)
 - Minerals have lower thickness close to the grain boundary to approximate real interference color behavior
 - An accessory plate (540 nm) insertion button that can show you enhancement or compensation effects on interference colors
+
 <img width="456" height="201" alt="image" src="https://github.com/user-attachments/assets/f69749c2-1a94-4182-9c1d-7586c2926548" />
 
 The slider below allows you to rotate the virtual stage.
+
 <img width="925" height="48" alt="image" src="https://github.com/user-attachments/assets/3a629784-b6cf-4557-a242-554c0c1e2733" />
 
 ---
