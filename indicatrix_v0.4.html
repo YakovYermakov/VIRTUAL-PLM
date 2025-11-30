@@ -44,7 +44,7 @@
 
         /* 3D view area. Height is controlled in CSS initially and updated by JS when resized. */
         #view3d {
-            height: 60%;
+            height: 50%;
             position: relative;
             background: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
             overflow: hidden;
@@ -395,6 +395,58 @@
         #indOverlay .crosshair-overlay::before, #indOverlay .crosshair-overlay::after {
             background: rgba(255,255,255,0.3);
         }
+
+        /* Toggle switch for accessory plate */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 14px;
+                width: 14px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                transition: .4s;
+            }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+            input:checked + .slider:before {
+                transform: translateX(14px);
+            }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+            .slider.round:before {
+                border-radius: 50%;
+            }
     </style>
     <script type="importmap">
         {
@@ -418,7 +470,7 @@
                     <div class="legend-item"><div class="dot" style="background:red"></div> Optic Axis (C-Axis)</div>
                     <div class="legend-item"><div class="dot" style="background:cyan"></div> nω (Ordinary)</div>
                     <div class="legend-item"><div class="dot" style="background:magenta"></div> nε' (Extraordinary)</div>
-                    <div class="legend-item"><div class="dot" style="background:#ffd700"></div> Cutting Plane (tilting)</div>
+                    <div class="legend-item"><div class="dot" style="background:#ffd700"></div> Thin Section Cut</div>
                     <div class="legend-item"><div class="dot" style="background:#999999"></div> Basal section (XY)</div>
                     <div class="legend-item"><div class="dot" style="background:#222222"></div> Principal section (XZ)</div>
                 </div>
@@ -493,10 +545,17 @@
                         <canvas id="canvasPPL"></canvas>
                         <div class="crosshair-overlay"></div>
                     </div>
-                    <div class="vis-panel" style="background:black;">
+                    <div class="vis-panel" id="xplPanel" style="background:black;">
                         <div class="vis-label">XPL View</div>
                         <canvas id="canvasXPL"></canvas>
                         <div class="crosshair-overlay"></div>
+                        <div style="position: absolute; bottom: 5px; left: 5px; color: #fff; font-size: 0.7rem; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 3px; display: flex; align-items: center;">
+                            Accessory Plate:
+                            <label class="switch" style="margin-left: 5px;">
+                                <input type="checkbox" id="plateCheck">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="control-group" style="margin-top:5px; margin-bottom:0;">
@@ -649,7 +708,8 @@
                 Z += intensity * cie31[i].z;
             }
             // scale to keep values in a reasonable range for the RGB transform
-            const scale = 0.075;
+            let scale = 0.05 + (retardationNM / 1500) * (0.12 - 0.05);
+            if (retardationNM > 1500) scale = 0.12;
             X *= scale; Y *= scale; Z *= scale;
 
             // Convert XYZ to linear RGB (approximate matrix)
@@ -841,7 +901,8 @@
             scaleFactor: 1.0,   // visual zoom factor for indicatrix
             system: quartz.sys, // crystal system for previews
             colW: quartz.colW,  // PPL color for omega
-            colE: quartz.colE   // PPL color for epsilon
+            colE: quartz.colE,   // PPL color for epsilon
+            plateOn: false      // accessory plate toggle
         };
 
         /* -------------------------------
@@ -922,7 +983,7 @@
 
         /* Draw a PPL preview: a filled polygon approximating a grain with blended PPL colors.
            system - crystal system string, angle - cut angle in degrees. */
-        function drawPPL(system, angle) {
+        function drawPPL(system, angle, relief_width) {
             if (!ctxPPL) return;
             const { w, h } = resizeCanvas(cvPPL, ctxPPL);
             const cx = w / 2, cy = h / 2;
@@ -947,17 +1008,42 @@
             for (let i = 1; i < points.length; i++) ctxPPL.lineTo(points[i].x * scale, points[i].y * scale);
             ctxPPL.closePath();
             ctxPPL.fillStyle = colorStr; ctxPPL.fill();
-            ctxPPL.lineWidth = 2; ctxPPL.strokeStyle = '#444'; ctxPPL.stroke();
+            ctxPPL.lineWidth = relief_width; ctxPPL.strokeStyle = '#111'; ctxPPL.stroke();
             ctxPPL.restore();
         }
 
         /* Draw an XPL preview: stack a number of thin layers representing varying retardation
            to approximate interference colors within the grain shape. */
-        function drawXPL(bir, system, angle) {
+        function drawXPL(bir, system, angle, relief_width) {
             if (!ctxXPL) return;
             const { w, h } = resizeCanvas(cvXPL, ctxXPL);
             const cx = w / 2, cy = h / 2;
-            ctxXPL.clearRect(0, 0, w, h);
+
+            const plateRet = 540;
+            const plateSlowAngle = 45;
+            let isAdd = false;
+            const plateColorStr = getInterferenceColor(plateRet);
+            const plateMatch = plateColorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            const pr = parseInt(plateMatch[1]), pg = parseInt(plateMatch[2]), pb = parseInt(plateMatch[3]);
+
+            if (state.plateOn) {
+                const rad = state.angle * Math.PI / 180;
+                const cos = Math.cos(rad);
+                const sin = Math.sin(rad);
+                const term = (cos * cos) / (state.nw * state.nw) + (sin * sin) / (state.ne * state.ne);
+                const nPrime = Math.sqrt(1 / term);
+                const isEPrimeSlow = nPrime > state.nw;
+                let vibAngleOmega = state.stage % 180;
+                let vibAngleEPrime = (state.stage + 90) % 180;
+                const slowAngle = isEPrimeSlow ? vibAngleEPrime : vibAngleOmega;
+                let delta = Math.abs(slowAngle - plateSlowAngle) % 180;
+                delta = Math.min(delta, 180 - delta);
+                isAdd = delta > 45;  // Reversed as per user feedback
+                ctxXPL.fillStyle = plateColorStr;
+                ctxXPL.fillRect(0, 0, w, h);
+            } else {
+                ctxXPL.clearRect(0, 0, w, h);
+            }
 
             const points = getGrainPoints(system, angle);
             const baseScale = Math.min(w, h) * 0.25;
@@ -967,13 +1053,25 @@
             ctxXPL.save(); ctxXPL.translate(cx, cy); ctxXPL.rotate(state.stage * Math.PI / 180);
 
             for (let d = 1; d <= maxThickness; d++) {
-                const ret = d * bir * 1000;
-                const rawColorStr = getInterferenceColor(ret);
+                let ret = d * bir * 1000;
+                let effective_ret = ret;
+                if (state.plateOn) {
+                    effective_ret = isAdd ? ret + plateRet : Math.abs(ret - plateRet);
+                }
+                const rawColorStr = getInterferenceColor(effective_ret);
                 const match = rawColorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
                 if (!match) continue;
                 let r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3]);
-                // apply extinction (simulates analyzer extinction)
-                r = Math.round(r * extinction); g = Math.round(g * extinction); b = Math.round(b * extinction);
+                if (state.plateOn) {
+                    r = pr + (r - pr) * extinction;
+                    g = pg + (g - pg) * extinction;
+                    b = pb + (b - pb) * extinction;
+                    r = Math.round(Math.max(0, Math.min(255, r)));
+                    g = Math.round(Math.max(0, Math.min(255, g)));
+                    b = Math.round(Math.max(0, Math.min(255, b)));
+                } else {
+                    r = Math.round(r * extinction); g = Math.round(g * extinction); b = Math.round(b * extinction);
+                }
 
                 const thicknessFraction = d / maxThickness;
                 const currentScale = 1.0 - (0.2 * thicknessFraction);
@@ -987,7 +1085,7 @@
                 ctxXPL.closePath();
                 ctxXPL.fill();
 
-                if (d === 1) { ctxXPL.lineWidth = 2; ctxXPL.strokeStyle = '#aaa'; ctxXPL.stroke(); }
+                if (d === 1) { ctxXPL.lineWidth = relief_width; ctxXPL.strokeStyle = '#111'; ctxXPL.stroke(); }
             }
             ctxXPL.restore();
         }
@@ -998,7 +1096,7 @@
         function drawMLChart(ret, thk, bir) {
             if (!ctxMLC) return;
             const { w, h } = resizeCanvas(cvMLC, ctxMLC);
-            const mLeft = 50, mBot = 30, mTop = 10, mRight = 10;
+            const mLeft = 30, mBot = 30, mTop = 10, mRight = 20;
             const chW = w - mLeft - mRight, chH = h - mBot - mTop;
             const maxRet = 1800, maxThk = 50;
             if (chW <= 0 || chH <= 0) return;
@@ -1096,6 +1194,12 @@
             const bir = Math.abs(nPrime - state.nw);
             const maxBir = Math.abs(state.ne - state.nw);
 
+            // average RI for the section
+            const average_ri = (state.nw + state.ne) / 2;
+            const epoxy_ri = 1.54;
+            const diff = Math.abs(average_ri - epoxy_ri);
+            const relief_width = 0.2 + Math.round((diff / 0.36) * 10);
+
             // retardation in nm (thickness in µm × birefringence × 1000)
             const retardation = state.thickness * bir * 1000;
             const colorStr = getInterferenceColor(retardation);
@@ -1112,7 +1216,7 @@
             if (colBox) colBox.style.backgroundColor = colorStr;
             const textElement = document.getElementById('interference-order-text');
             if (textElement) textElement.innerText = name;
-            
+
             // 3D indicatrix scaling
             const sX = state.nw * state.scaleFactor;
             const sY = state.ne * state.scaleFactor;
@@ -1121,9 +1225,9 @@
             // Plane tilt (cut angle)
             const cutRot = (Math.PI / 2) - rad;
             planeGroup.rotation.x = cutRot;
-            
+
             const stageRad = state.stage * (Math.PI / 180);
-            
+
             // Semi-axes of the elliptical cut (used for scaling the plane mesh and drawing outline)
             const rX_cut = state.nw * state.scaleFactor;    // nω direction length (local X)
             const rY_cut = nPrime * state.scaleFactor;      // nε' direction length (local Y)
@@ -1152,14 +1256,14 @@
             // basal: circle in XY with radius = nω
             const basalRadius = state.nw * state.scaleFactor;
             basalSection.position.copy(center);
-            basalSection.rotation.set(Math.PI / 2, 0, 0);
+            basalSection.rotation.set(Math.PI / 2, 0, Math.PI);
             basalSection.scale.set(basalRadius, basalRadius, 1);
 
             // principal: ellipse projected into XZ with radii (nω, nε)
             const principalRx = state.nw * state.scaleFactor;
             const principalRz = state.ne * state.scaleFactor;
             principalSection.position.copy(center);
-            principalSection.rotation.set(0, 0, 0);
+            principalSection.rotation.set(0, 0, Math.PI);
             principalSection.scale.set(principalRx, principalRz, 1);
 
             // Arrows are positioned inside the plane group and scaled to indicate axis lengths
@@ -1176,8 +1280,8 @@
 
             // Redraw 2D previews and chart
             drawInd2D(state.nw, nPrime);
-            drawPPL(state.system, state.angle);
-            drawXPL(bir, state.system, state.angle);
+            drawPPL(state.system, state.angle, relief_width);
+            drawXPL(bir, state.system, state.angle, relief_width);
             drawMLChart(retardation, state.thickness, bir);
         }
 
@@ -1211,6 +1315,12 @@
         document.getElementById('zoomSlider').addEventListener('input', e => {
             state.scaleFactor = parseFloat(e.target.value);
             document.getElementById('zoomVal').innerText = `${state.scaleFactor.toFixed(2)}x`;
+            update();
+        });
+
+        const plateCheck = document.getElementById('plateCheck');
+        plateCheck.addEventListener('change', (e) => {
+            state.plateOn = e.target.checked;
             update();
         });
 
