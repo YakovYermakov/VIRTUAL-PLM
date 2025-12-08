@@ -468,8 +468,9 @@
                 </div>
                 <div id="legend3d">
                     <div class="legend-item"><div class="dot" style="background:red"></div> Optic Axis (C-Axis)</div>
-                    <div class="legend-item"><div class="dot" style="background:cyan"></div> nω (Ordinary)</div>
-                    <div class="legend-item"><div class="dot" style="background:magenta"></div> nε' (Extraordinary)</div>
+                    <div class="legend-item"><div class="dot" style="background:cyan"></div> nω (True Ordinary)</div>
+                    <div class="legend-item"><div class="dot" style="background:red"></div> nε (True Extraordinary)</div>
+                    <div class="legend-item"><div class="dot" style="background:magenta"></div> nε' (Apparent Extraordinary)</div>
                     <div class="legend-item"><div class="dot" style="background:#ffd700"></div> Thin Section Cut</div>
                     <div class="legend-item"><div class="dot" style="background:#999999"></div> Basal section (XY)</div>
                     <div class="legend-item"><div class="dot" style="background:#222222"></div> Principal section (XZ)</div>
@@ -481,7 +482,7 @@
             </div>
             <div class="splitter splitter-h" id="hSplitter"></div>
             <div id="chart-section">
-                <h2>Michel-Lévy Interference Chart</h2>
+                <h2>Michel-Lévy Interference Color Chart</h2>
                 <div id="mlc-wrapper">
                     <div id="mlc-container">
                         <canvas id="canvasMLC"></canvas>
@@ -500,30 +501,31 @@
                 <div class="control-group">
                     <label>Mineral Preset</label>
                     <select id="presetSel">
+                        <option value="Zircon">Zircon (Extreme δ)</option>
                         <option value="Quartz">Quartz (Low δ)</option>
                         <option value="Calcite">Calcite (Extreme δ)</option>
                         <option value="Tourmaline">Tourmaline (High δ)</option>
-                        <option value="Zircon">Zircon (Extreme δ)</option>
-                        <option value="Beryl">Beryl (Low δ)</option>
+                        <option value="Apatite">Apatite (Very Low δ)</option>
+                        <option value="Nepheline">Nepheline (Very Low δ)</option>
                         <option value="Custom">Custom Values...</option>
                     </select>
                 </div>
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
                     <div style="flex:1">
-                        <label style="font-size:0.8rem; color:#aaa;">nω (Omega)</label>
-                        <input type="number" id="nwIn" step="0.001" value="1.544">
+                        <label style="font-size:0.8rem; color:#aaa;">nω (Ordinary)</label>
+                        <input type="number" id="nwIn" step="0.001" value="1.924">
                     </div>
                     <div style="flex:1">
-                        <label style="font-size:0.8rem; color:#aaa;">nε (Epsilon)</label>
-                        <input type="number" id="neIn" step="0.001" value="1.553">
+                        <label style="font-size:0.8rem; color:#aaa;">nε (Extraordinary)</label>
+                        <input type="number" id="neIn" step="0.001" value="1.970">
                     </div>
                 </div>
                 <div class="control-group">
                     <label>
-                        <span>Cut Angle (θ)</span>
-                        <span id="angleVal" style="color:var(--accent)">0.0°</span>
+                        <span>Indicatrix Cut Angle to XY</span>
+                        <span id="angleVal" style="color:var(--accent)">45.0°</span>
                     </label>
-                    <input type="range" id="angleSlide" min="0" max="90" step="0.1" value="0">
+                    <input type="range" id="angleSlide" min="0" max="90" step="0.1" value="45">
                     <div style="font-size: 0.7rem; color: var(--text-muted); display:flex; justify-content:space-between; margin-top:2px;">
                         <span>Basal (0°)</span>
                         <span>Principal (90°)</span>
@@ -531,7 +533,7 @@
                 </div>
                 <div class="control-group" style="margin-bottom:0;">
                     <label>
-                        <span>Thickness (d)</span>
+                        <span>Mineral Thickness (d)</span>
                         <span id="thickVal" style="color:var(--highlight)">30 µm</span>
                     </label>
                     <input type="range" id="thickSlide" min="10" max="50" step="1" value="30">
@@ -549,21 +551,26 @@
                         <div class="vis-label">XPL View</div>
                         <canvas id="canvasXPL"></canvas>
                         <div class="crosshair-overlay"></div>
-                        <div style="position: absolute; bottom: 5px; left: 5px; color: #fff; font-size: 0.7rem; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 3px; display: flex; align-items: center;">
-                            Accessory Plate:
-                            <label class="switch" style="margin-left: 5px;">
-                                <input type="checkbox" id="plateCheck">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
                     </div>
                 </div>
                 <div class="control-group" style="margin-top:5px; margin-bottom:0;">
                     <label>
                         <span>Stage Rotation</span>
-                        <span id="stageVal" style="color:var(--accent)">0°</span>
+                        <span id="stageVal" style="color:var(--accent)">45°</span>
                     </label>
-                    <input type="range" id="stageSlide" min="0" max="360" step="1" value="0">
+                    <input type="range" id="stageSlide" min="0" max="360" step="1" value="45">
+                </div>
+                <div style="margin-top:6px;">
+                    Accessory Plate (540nm):
+                    <label class="switch" style="margin-left: 5px; margin-right: 5px;">
+                        <input type="checkbox" id="plateCheck">
+                        <span class="slider round"></span>
+                    </label>
+                    Zoom to Grain Boundary:
+                    <label class="switch" style="margin-left: 5px;">
+                        <input type="checkbox" id="zoomBoundaryBtn">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
             </div>
             <div class="panel-section" style="border-bottom: none;">
@@ -584,7 +591,7 @@
                 </div>
                 <div class="formula-box">
                     <div class="formula-row">
-                        <strong>Birefringence (δ):</strong> <span class="formula-math blue">δ = |nε' - nω|</span><br>
+                        <strong>Apparent birefringence:</strong> <span class="formula-math blue">δ' = |nε' - nω|</span><br>
                         Difference between the two refractive indices on the cut. Notice the difference between apparent and maximum birefringence.
                     </div>
                     <div class="formula-row" style="margin-bottom:0;">
@@ -662,12 +669,14 @@
 
         /* Mineral presets: refractive indices, crystal system and sample colors for PPL preview */
         const minerals = {
-            'Quartz': { nw: 1.544, ne: 1.553, sys: 'hexagonal', colW: [255, 255, 255], colE: [255, 255, 255] },
-            'Calcite': { nw: 1.658, ne: 1.486, sys: 'rhombohedral', colW: [255, 255, 255], colE: [255, 255, 255] },
-            'Tourmaline': { nw: 1.669, ne: 1.638, sys: 'hexagonal', colW: [30, 60, 30], colE: [200, 220, 200] },
-            'Zircon': { nw: 1.923, ne: 1.968, sys: 'tetragonal', colW: [230, 210, 190], colE: [255, 255, 255] },
-            'Beryl': { nw: 1.568, ne: 1.564, sys: 'hexagonal', colW: [180, 230, 220], colE: [220, 240, 255] },
-            'Custom': { nw: 1.500, ne: 1.600, sys: 'hexagonal', colW: [200, 200, 200], colE: [255, 255, 255] }
+            'Zircon': { nw: 1.924, ne: 1.970, sys: 'zircon', colW: [230, 210, 190], colE: [255, 255, 255] },
+            'Quartz': { nw: 1.544, ne: 1.553, sys: 'quartz', colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Calcite': { nw: 1.658, ne: 1.486, sys: 'calcite', colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Tourmaline': { nw: 1.631, ne: 1.610, sys: 'tourmaline', colW: [30, 60, 30], colE: [200, 220, 200] },
+            'Apatite': { nw: 1.629, ne: 1.624, sys: 'apatite', colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Nepheline': { nw: 1.529, ne: 1.526, sys: 'nepheline', colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Custom': { nw: 1.000, ne: 1.500, sys: 'zircon', colW: [255, 255, 255], colE: [255, 255, 255] }
+
         };
 
         /* CIE 1931 color matching functions (sampled) used to synthesize interference colors */
@@ -738,7 +747,7 @@
 
         /* Find the best matching color name / order from the lookup table */
         function getOrderName(nm) {
-            if (nm > COLOR_LUT[COLOR_LUT.length - 1].retardation) return "High Order White";
+            if (nm > COLOR_LUT[COLOR_LUT.length - 1].retardation) return "High Order Iridescent";
             for (let i = COLOR_LUT.length - 1; i >= 0; i--) {
                 const entry = COLOR_LUT[i];
                 if (nm >= entry.retardation) return `${entry.color} (${entry.order})`;
@@ -752,14 +761,77 @@
             const t = angleDeg / 90;
             const lerp = (start, end) => start + (end - start) * t;
             const points = [];
-            if (system === 'hexagonal') {
+            if (system === 'quartz') {
                 const hex = [{ x: 0, y: -1 }, { x: 0.866, y: -0.5 }, { x: 0.866, y: 0.5 }, { x: 0, y: 1 }, { x: -0.866, y: 0.5 }, { x: -0.866, y: -0.5 }];
-                const rect = [{ x: 0, y: -2 }, { x: 0.866, y: -2 }, { x: 0.866, y: 2 }, { x: 0, y: 2 }, { x: -0.866, y: 2 }, { x: -0.866, y: -2 }];
+                const rect = [{ x: 0, y: -1.8 }, { x: 0.866, y: -1.0 }, { x: 0.866, y: 1.0 }, { x: 0, y: 1.8 }, { x: -0.866, y: 1.0 }, { x: -0.866, y: -1.0 }];
                 for (let i = 0; i < 6; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
-            } else if (system === 'tetragonal') {
-                const sq = [{ x: -0.7, y: -0.7 }, { x: 0.7, y: -0.7 }, { x: 0.7, y: 0.7 }, { x: -0.7, y: 0.7 }];
-                const rect = [{ x: -0.7, y: -2 }, { x: 0.7, y: -2 }, { x: 0.7, y: 2 }, { x: -0.7, y: 2 }];
-                for (let i = 0; i < 4; i++) points.push({ x: lerp(sq[i].x, rect[i].x), y: lerp(sq[i].y, rect[i].y) });
+            } else if (system === 'zircon') {
+                const sq = [
+                    { x: 0, y: -0.7 },    // bottom center (degenerate termination)
+                    { x: -0.7, y: -0.7 }, // bottom left
+                    { x: -0.7, y: 0.7 },  // top left
+                    { x: 0, y: 0.7 },     // top center (degenerate termination)
+                    { x: 0.7, y: 0.7 },   // top right
+                    { x: 0.7, y: -0.7 }   // bottom right
+                ];
+                const termScale = 0.7; // Scale to keep max |y| = 2 (original height)
+                const rect = [
+                    { x: 0, y: -2.5 * termScale },    // bottom point (termination)
+                    { x: -0.7, y: -1.8 * termScale },   // bottom left
+                    { x: -0.7, y: 1.8 * termScale },    // top left
+                    { x: 0, y: 2.5 * termScale },     // top point (termination)
+                    { x: 0.7, y: 1.8 * termScale },     // top right
+                    { x: 0.7, y: -1.8 * termScale }     // bottom right
+                ];
+                for (let i = 0; i < 6; i++) points.push({ x: lerp(sq[i].x, rect[i].x), y: lerp(sq[i].y, rect[i].y) });
+            } else if (system === 'calcite') {
+                const rhomb = [{ x: 0, y: -0.5 }, { x: 0.8, y: -0.5 }, { x: 0, y: 1 }, { x: -0.8, y: -0.5 }];
+                const longRhomb = [{ x: 0, y: -1 }, { x: 1.5, y: 0 }, { x: 0, y: 1 }, { x: -1.5, y: 0 }];
+                for (let i = 0; i < 4; i++) points.push({ x: lerp(rhomb[i].x, longRhomb[i].x), y: lerp(rhomb[i].y, longRhomb[i].y) });
+            } else if (system === 'tourmaline') {
+                const hex = [
+                    { x: 0.40, y: 0.80 },
+                    { x: 0.90, y: 0.00 },
+                    { x: 0.90, y: -0.45 },
+                    { x: 0.40, y: -0.75 },
+                    { x: 0.00, y: -0.75 },
+                    { x: -0.40, y: -0.75 },
+                    { x: -0.90, y: -0.45 },
+                    { x: -0.90, y: 0.00 },
+                    { x: -0.40, y: 0.80 },
+                    { x: 0.0, y: 1.00 }
+                ];
+                const rect = [
+                    { x: 0.40 + 0.3, y: 0.80 + 0.8 },
+                    { x: 0.90, y: 0.00 + 1.4 },
+                    { x: 0.90, y: -0.45 - 1 },
+                    { x: 0.40, y: -0.75 - 0.95 },
+                    { x: 0.00, y: -0.75 - 1.05 },
+                    { x: -0.40, y: -0.75 - 0.95 },
+                    { x: -0.90, y: -0.45 - 1 },
+                    { x: -0.90, y: 0.00 + 1.4 },
+                    { x: -0.40 - 0.3, y: 0.80 + 0.8 },
+                    { x: 0.0, y: 1.00 + 0.8 }
+                ];
+                for (let i = 0; i < 10; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else if (system === 'apatite') {
+                const hex = [{ x: 0.5, y: -0.866 }, { x: 1, y: 0 },
+                { x: 1, y: 0 }, { x: 0.5, y: 0.866 },
+                { x: -0.5, y: 0.866 }, { x: -1, y: 0 },
+                { x: -1, y: 0 }, { x: -0.5, y: -0.866 }];
+                const rect = [{ x: 0.5, y: -0.866 - 1 }, { x: 1, y: 0 - 1.5 },
+                { x: 1, y: 0 + 1.5 }, { x: 0.5, y: 0.866 + 1 },
+                { x: -0.5, y: 0.866 + 1 }, { x: -1, y: 0 + 1.5 },
+                { x: -1, y: 0 - 1.5 }, { x: -0.5, y: -0.866 - 1 }
+                ];
+                for (let i = 0; i < 8; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else if (system === 'nepheline') {
+                const hex = [{ x: 0.5, y: -0.866 }, { x: 1, y: 0 }, { x: 0.5, y: 0.866 },
+                { x: -0.5, y: 0.866 }, { x: -1, y: 0 }, { x: -0.5, y: -0.866 }];
+                const rect = [{ x: 1.2, y: -1.2 }, { x: 1.2, y: 0 }, { x: 1.2, y: 1.2 },
+                { x: -1.2, y: 1.2 }, { x: -1.2, y: 0 }, { x: -1.2, y: -1.2 }
+                ];
+                for (let i = 0; i < 6; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
             } else {
                 const rhomb = [{ x: 0, y: -1 }, { x: 0.8, y: 0 }, { x: 0, y: 1 }, { x: -0.8, y: 0 }];
                 const longRhomb = [{ x: 0.5, y: -2 }, { x: 0.8, y: 0.5 }, { x: -0.5, y: 2 }, { x: -0.8, y: -0.5 }];
@@ -767,6 +839,7 @@
             }
             return points;
         }
+
 
 
         /* -------------------------------
@@ -838,7 +911,7 @@
 
         // Optic axis (small red cylinder)
         const cAxisGeo = new THREE.CylinderGeometry(0.02, 0.02, 2, 6);
-        const cAxisMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const cAxisMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
         const opticAxis = new THREE.Mesh(cAxisGeo, cAxisMat);
         opticAxis.rotation.z = 0;  // aligned with Y by default
         indicatrixGroup.add(opticAxis);
@@ -864,14 +937,14 @@
             const group = new THREE.Group();
 
             const shaft = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.02, 0.02, 1, 6),
+                new THREE.CylinderGeometry(0.02, 0.02, 1, 12),
                 new THREE.MeshBasicMaterial({ color })
             );
             shaft.position.y = 0.5;
             group.add(shaft);
 
             const head = new THREE.Mesh(
-                new THREE.ConeGeometry(0.08, 0.125, 6),
+                new THREE.ConeGeometry(0.08, 0.125, 12),
                 new THREE.MeshBasicMaterial({ color })
             );
             head.position.y = 1.0;
@@ -885,24 +958,27 @@
 
         const arrowOmega = makeArrow(0x00ffff);
         const arrowEPrime = makeArrow(0xff00ff);
+        const arrowEpsilon = makeArrow(0xff1111);
         planeGroup.add(arrowOmega);
         planeGroup.add(arrowEPrime);
+        indicatrixGroup.add(arrowEpsilon);
 
         /* -------------------------------
            Application state
            ------------------------------- */
-        const quartz = minerals.Quartz;
+        const Zircon = minerals.Zircon;
         const state = {
-            nw: quartz.nw,
-            ne: quartz.ne,
-            angle: 0,           // cut angle (degrees between basal and principal)
+            nw: Zircon.nw,
+            ne: Zircon.ne,
+            angle: 45,           // cut angle (degrees between basal and principal)
             thickness: 30,      // sample thickness (µm)
-            stage: 0,           // stage rotation (degrees)
+            stage: 45,           // stage rotation (degrees)
             scaleFactor: 1.0,   // visual zoom factor for indicatrix
-            system: quartz.sys, // crystal system for previews
-            colW: quartz.colW,  // PPL color for omega
-            colE: quartz.colE,   // PPL color for epsilon
-            plateOn: false      // accessory plate toggle
+            system: Zircon.sys, // crystal system for previews
+            colW: Zircon.colW,  // PPL color for omega
+            colE: Zircon.colE,   // PPL color for epsilon
+            plateOn: false,      // accessory plate toggle
+            zoomGrain: false
         };
 
         /* -------------------------------
@@ -956,8 +1032,16 @@
             // arrow head
             ctxInd.beginPath(); ctxInd.moveTo(srx, 0); ctxInd.lineTo(srx - head, -head / 2); ctxInd.lineTo(srx - head, head / 2); ctxInd.closePath(); ctxInd.stroke();
 
-            // nε' arrow (magenta) — radius along local -Y (convention used here)
-            ctxInd.strokeStyle = 'magenta';
+            // nε' arrow — radius along local -Y (convention used here); color cyan if angle == 0, else magenta
+            let ePrimeStroke;
+            if (Math.abs(state.angle - 0) < 1e-6) {
+                ePrimeStroke = 'cyan'; // cyan (nω)
+            } else if (Math.abs(state.angle - 90) < 1e-6) {
+                ePrimeStroke = 'red'; // red (nε)
+            } else {
+                ePrimeStroke = 'magenta'; // magenta (nε' apparent)
+            }
+            ctxInd.strokeStyle = ePrimeStroke;
             ctxInd.beginPath(); ctxInd.moveTo(0, 0); ctxInd.lineTo(0, -sry); ctxInd.stroke();
             // arrow head
             ctxInd.beginPath(); ctxInd.moveTo(0, -sry); ctxInd.lineTo(-head / 2, -sry + head); ctxInd.lineTo(head / 2, -sry + head); ctxInd.closePath(); ctxInd.stroke();
@@ -974,7 +1058,8 @@
             ctxInd.save();
             ctxInd.translate(-25, -sry / 2);
             ctxInd.rotate(-stageRad);
-            ctxInd.fillStyle = 'magenta'; ctxInd.textAlign = 'center'; ctxInd.textBaseline = 'middle';
+            ctxInd.fillStyle = ePrimeStroke; // Use same conditional color for label
+            ctxInd.textAlign = 'center'; ctxInd.textBaseline = 'middle';
             ctxInd.fillText(`${ry.toFixed(3)}`, 0, 0);
             ctxInd.restore();
 
@@ -983,6 +1068,8 @@
 
         /* Draw a PPL preview: a filled polygon approximating a grain with blended PPL colors.
            system - crystal system string, angle - cut angle in degrees. */
+        /* In drawPPL function: Stroke first, then fill */
+        /* In drawPPL function: Add zoom/pan logic similar to XPL */
         function drawPPL(system, angle, relief_width) {
             if (!ctxPPL) return;
             const { w, h } = resizeCanvas(cvPPL, ctxPPL);
@@ -1000,20 +1087,45 @@
             const b = Math.round((state.colW[2] * intensityOmega + colEPrime[2] * intensityEPrime));
 
             const colorStr = `rgb(${r}, ${g}, ${b})`;
-            const scale = Math.min(w, h) * 0.25;
+
+            let zoom = state.zoomGrain ? 3 : 1;
+            const scale = Math.min(w, h) * 0.25 * zoom;
             const points = getGrainPoints(system, angle);
 
-            ctxPPL.save(); ctxPPL.translate(cx, cy); ctxPPL.rotate(stageRad);
+            let panX = 0, panY = 0;
+            if (state.zoomGrain) {
+                // Find corner with min y (top corner)
+                let minY = points[0].y;
+                let corner = points[0];
+                for (let p of points) {
+                    if (p.y < minY) {
+                        minY = p.y;
+                        corner = p;
+                    }
+                }
+
+                const lx = corner.x * scale;
+                const ly = corner.y * scale;
+                const cosPhi = Math.cos(stageRad);
+                const sinPhi = Math.sin(stageRad);
+
+                panX = - (cosPhi * lx - sinPhi * ly);
+                panY = - (sinPhi * lx + cosPhi * ly);
+            }
+
+            ctxPPL.save(); ctxPPL.translate(cx + panX, cy + panY); ctxPPL.rotate(stageRad);
             ctxPPL.beginPath(); ctxPPL.moveTo(points[0].x * scale, points[0].y * scale);
             for (let i = 1; i < points.length; i++) ctxPPL.lineTo(points[i].x * scale, points[i].y * scale);
             ctxPPL.closePath();
-            ctxPPL.fillStyle = colorStr; ctxPPL.fill();
+
+            // Stroke first (centered), then fill to overwrite inner half
             ctxPPL.lineWidth = relief_width; ctxPPL.strokeStyle = '#111'; ctxPPL.stroke();
+            ctxPPL.fillStyle = colorStr; ctxPPL.fill();
+
             ctxPPL.restore();
         }
 
-        /* Draw an XPL preview: stack a number of thin layers representing varying retardation
-           to approximate interference colors within the grain shape. */
+        /* In drawXPL function: Update pan logic to center on corner */
         function drawXPL(bir, system, angle, relief_width) {
             if (!ctxXPL) return;
             const { w, h } = resizeCanvas(cvXPL, ctxXPL);
@@ -1038,7 +1150,8 @@
                 const slowAngle = isEPrimeSlow ? vibAngleEPrime : vibAngleOmega;
                 let delta = Math.abs(slowAngle - plateSlowAngle) % 180;
                 delta = Math.min(delta, 180 - delta);
-                isAdd = delta > 45;  // Reversed as per user feedback
+                isAdd = delta > 45;
+
                 ctxXPL.fillStyle = plateColorStr;
                 ctxXPL.fillRect(0, 0, w, h);
             } else {
@@ -1046,12 +1159,60 @@
             }
 
             const points = getGrainPoints(system, angle);
-            const baseScale = Math.min(w, h) * 0.25;
+            let zoom = state.zoomGrain ? 3 : 1;
+            let baseScale = Math.min(w, h) * 0.25 * zoom;
+
+            let panX = 0, panY = 0;
+            if (state.zoomGrain) {
+                // Find corner with min y (top corner)
+                let minY = points[0].y;
+                let corner = points[0];
+                for (let p of points) {
+                    if (p.y < minY) {
+                        minY = p.y;
+                        corner = p;
+                    }
+                }
+
+                // Use largest layer scale for corner
+                const maxThickness = state.thickness;
+                const thicknessFraction = (maxThickness > 0) ? 1 / maxThickness : 0;
+                const currentScale = 1.0 - (0.2 * thicknessFraction);
+                const layerScale = baseScale * currentScale;
+
+                const lx = corner.x * layerScale;
+                const ly = corner.y * layerScale;
+                const phi = state.stage * Math.PI / 180;
+                const cosPhi = Math.cos(phi);
+                const sinPhi = Math.sin(phi);
+
+                panX = - (cosPhi * lx - sinPhi * ly);
+                panY = - (sinPhi * lx + cosPhi * ly);
+            }
+
+            ctxXPL.save();
+            ctxXPL.translate(cx + panX, cy + panY);
+            ctxXPL.rotate(state.stage * Math.PI / 180);
             const maxThickness = state.thickness;
-            const extinction = Math.sin(2 * state.stage * Math.PI / 180) ** 2;
 
-            ctxXPL.save(); ctxXPL.translate(cx, cy); ctxXPL.rotate(state.stage * Math.PI / 180);
+            const tau = state.stage * (Math.PI / 180);
+            const T_rotation = Math.pow(Math.sin(2 * tau), 2);
 
+            // Draw stroke first on largest (outermost) path
+            if (maxThickness > 0) {
+                const thicknessFraction = 1 / maxThickness;
+                const currentScale = 1.0 - (0.2 * thicknessFraction);
+                const layerScale = baseScale * currentScale;
+                ctxXPL.beginPath();
+                ctxXPL.moveTo(points[0].x * layerScale, points[0].y * layerScale);
+                for (let i = 1; i < points.length; i++) ctxXPL.lineTo(points[i].x * layerScale, points[i].y * layerScale);
+                ctxXPL.closePath();
+                ctxXPL.lineWidth = relief_width;
+                ctxXPL.strokeStyle = '#111';
+                ctxXPL.stroke();
+            }
+
+            // Then draw layered fills (overwriting inner stroke)
             for (let d = 1; d <= maxThickness; d++) {
                 let ret = d * bir * 1000;
                 let effective_ret = ret;
@@ -1062,15 +1223,19 @@
                 const match = rawColorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
                 if (!match) continue;
                 let r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3]);
+
                 if (state.plateOn) {
-                    r = pr + (r - pr) * extinction;
-                    g = pg + (g - pg) * extinction;
-                    b = pb + (b - pb) * extinction;
+                    r = pr + (r - pr) * T_rotation;
+                    g = pg + (g - pg) * T_rotation;
+                    b = pb + (b - pb) * T_rotation;
+
                     r = Math.round(Math.max(0, Math.min(255, r)));
                     g = Math.round(Math.max(0, Math.min(255, g)));
                     b = Math.round(Math.max(0, Math.min(255, b)));
                 } else {
-                    r = Math.round(r * extinction); g = Math.round(g * extinction); b = Math.round(b * extinction);
+                    r = Math.round(r * T_rotation);
+                    g = Math.round(g * T_rotation);
+                    b = Math.round(b * T_rotation);
                 }
 
                 const thicknessFraction = d / maxThickness;
@@ -1084,24 +1249,23 @@
                 for (let i = 1; i < points.length; i++) ctxXPL.lineTo(points[i].x * layerScale, points[i].y * layerScale);
                 ctxXPL.closePath();
                 ctxXPL.fill();
-
-                if (d === 1) { ctxXPL.lineWidth = relief_width; ctxXPL.strokeStyle = '#111'; ctxXPL.stroke(); }
             }
+
             ctxXPL.restore();
         }
-
-        /* Michel-Lévy chart drawing: caches a single-row canvas of colors and scales it to the chart area.
-           Draws birefringence guide lines, scale ticks and a movable marker for current ret / thickness. */
+        /* Michel-Lévy chart drawing with Axis Labels */
         let mlcCache = null;
         function drawMLChart(ret, thk, bir) {
             if (!ctxMLC) return;
             const { w, h } = resizeCanvas(cvMLC, ctxMLC);
-            const mLeft = 30, mBot = 30, mTop = 10, mRight = 20;
+
+            // Increased margins slightly to fit text
+            const mLeft = 45, mBot = 40, mTop = 10, mRight = 20;
             const chW = w - mLeft - mRight, chH = h - mBot - mTop;
             const maxRet = 1800, maxThk = 50;
             if (chW <= 0 || chH <= 0) return;
 
-            // Cache a horizontal color bar at the required width to avoid recalculating per frame.
+            // Cache generation (Unchanged)
             if (!mlcCache || mlcCache.width !== Math.floor(chW)) {
                 const tempCan = document.createElement('canvas');
                 tempCan.width = chW; tempCan.height = 1;
@@ -1124,7 +1288,7 @@
             ctxMLC.imageSmoothingEnabled = false;
             ctxMLC.drawImage(mlcCache, mLeft, mTop, chW, chH);
 
-            // draw birefringence guide lines and labels
+            // Draw birefringence lines (Unchanged logic)
             ctxMLC.save(); ctxMLC.beginPath(); ctxMLC.rect(mLeft, mTop, chW, chH); ctxMLC.clip();
             const birLines = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.05, 0.06, 0.08, 0.1, 0.15, 0.2];
             ctxMLC.lineWidth = 1; ctxMLC.strokeStyle = 'rgba(255,255,255,0.4)'; ctxMLC.font = 'bold 12px sans-serif';
@@ -1144,8 +1308,26 @@
             });
             ctxMLC.restore();
 
-            // chart axes and ticks
+            // Axes box
             ctxMLC.strokeStyle = '#555'; ctxMLC.strokeRect(mLeft, mTop, w - mLeft - mRight, h - mTop - mBot);
+
+            // Axis Labels
+            ctxMLC.fillStyle = '#aaa';
+            ctxMLC.font = '14px sans-serif';
+
+            // X Axis Label
+            ctxMLC.textAlign = 'center';
+            ctxMLC.fillText("Retardation (nm)", mLeft + chW / 2, h - 5);
+
+            // Y Axis Label (Rotated)
+            ctxMLC.save();
+            ctxMLC.translate(15, mTop + chH / 2);
+            ctxMLC.rotate(-Math.PI / 2);
+            ctxMLC.textAlign = 'center';
+            ctxMLC.fillText("Thickness (µm)", 0, 0);
+            ctxMLC.restore();
+
+            // Ticks and Numbers (Unchanged)
             ctxMLC.fillStyle = '#ddd'; ctxMLC.font = 'bold 12px sans-serif'; ctxMLC.textAlign = 'center';
             for (let r = 0; r <= maxRet; r += 200) {
                 const x = mLeft + (r / maxRet) * chW;
@@ -1153,14 +1335,18 @@
                 ctxMLC.fillText(r, x, mTop + chH + 18);
             }
 
-            // order separators and thickness ticks
+            // Order dots
             ctxMLC.fillStyle = 'red';
             const orderSeparators = [551, 1102, 1653, 2204, 2755, 3306];
             orderSeparators.forEach(sep => {
                 const x = mLeft + (sep / maxRet) * chW;
-                ctxMLC.beginPath(); ctxMLC.arc(x, mTop + chH + 12, 3, 0, Math.PI * 2); ctxMLC.fill();
+                // Don't draw if outside chart
+                if (x <= mLeft + chW) {
+                    ctxMLC.beginPath(); ctxMLC.arc(x, mTop + chH + 12, 3, 0, Math.PI * 2); ctxMLC.fill();
+                }
             });
 
+            // Y Axis Ticks
             ctxMLC.textAlign = 'right';
             for (let t = 0; t <= maxThk; t += 10) {
                 const y = mTop + chH - (t / maxThk) * chH;
@@ -1169,7 +1355,7 @@
                 ctxMLC.fillText(t, mLeft - 8, y + 4);
             }
 
-            // draw current ret/thickness marker if inside bounds
+            // Current Value Marker (Unchanged)
             if (ret <= maxRet && thk <= maxThk) {
                 const mx = mLeft + (ret / maxRet) * chW;
                 const my = mTop + chH - (thk / maxThk) * chH;
@@ -1194,11 +1380,46 @@
             const bir = Math.abs(nPrime - state.nw);
             const maxBir = Math.abs(state.ne - state.nw);
 
-            // average RI for the section
-            const average_ri = (state.nw + state.ne) / 2;
+            let arrowEPrimeColor;
+            if (Math.abs(state.angle - 0) < 1e-6) {
+                arrowEPrimeColor = 0x00ffff; // cyan (nω)
+            } else if (Math.abs(state.angle - 90) < 1e-6) {
+                arrowEPrimeColor = 0xff1111; // red (nε)
+            } else {
+                arrowEPrimeColor = 0xff00ff; // magenta (nε' apparent)
+            }
+
+            arrowEPrime.traverse(function (child) {
+                if (child instanceof THREE.Mesh && child.material) {
+                    child.material.color.set(arrowEPrimeColor);
+                }
+            });
+
+            arrowEPrime.traverse(function (child) {
+                if (child instanceof THREE.Mesh && child.material) {
+                    child.material.color.set(arrowEPrimeColor);
+                }
+            });
+
+            // --- Relief based on actual E–W vibration direction (polarizer direction) ---
+            const a = state.nw * state.scaleFactor;       // ellipse semi-axis along local X (nω)
+            const b = nPrime * state.scaleFactor;         // ellipse semi-axis along local Y (nε')
+            const φ = state.stage * (Math.PI / 180);      // rotation of indicatrix relative to lab E–W direction
+
+            // radial distance of a rotated ellipse along lab X (E–W vibration direction)
+            const denom = Math.sqrt((b * Math.cos(φ)) ** 2 + (a * Math.sin(φ)) ** 2);
+            const r_EW = denom > 0 ? (a * b) / denom : a;
+
+            // convert back to effective refractive index
+            const n_EW = r_EW / state.scaleFactor;
+
+            // compute relief relative to epoxy
             const epoxy_ri = 1.54;
-            const diff = Math.abs(average_ri - epoxy_ri);
-            const relief_width = 0.2 + Math.round((diff / 0.36) * 10);
+            const diff = Math.abs(n_EW - epoxy_ri);
+
+            // map difference → line width
+            const relief_width = 0.5 + diff * 30;     // smooth, no rounding
+
 
             // retardation in nm (thickness in µm × birefringence × 1000)
             const retardation = state.thickness * bir * 1000;
@@ -1270,13 +1491,15 @@
             arrowOmega.position.set(0, 0, 0);
             arrowOmega.rotation.set(0, 0, 0);
             arrowOmega.scale.set(rX_cut, rX_cut, rX_cut);
-            arrowOmega.rotation.z = Math.PI / 2;
 
             arrowEPrime.position.set(0, 0, 0);
             arrowEPrime.rotation.set(0, 0, 0);
             arrowEPrime.scale.set(rY_cut, rY_cut, rY_cut);
-            // note: arrowOmega.rotation.z intentionally set twice in original code (kept for parity)
             arrowOmega.rotation.z = Math.PI / 2;
+
+            arrowEpsilon.position.set(0, 0, 0);
+            arrowEpsilon.rotation.set(0, 0, 0);
+            arrowEpsilon.scale.set(1, 1, 1);
 
             // Redraw 2D previews and chart
             drawInd2D(state.nw, nPrime);
@@ -1284,6 +1507,68 @@
             drawXPL(bir, state.system, state.angle, relief_width);
             drawMLChart(retardation, state.thickness, bir);
         }
+
+        let draggingStage = false;
+        let lastAngle = 0;                 // angle of the mouse relative to the centre
+        let centreX = 0, centreY = 0;      // centre of the canvas (updated on resize)
+
+        function startStageDrag(e, canvas) {
+            draggingStage = true;
+            const rect = canvas.getBoundingClientRect();
+            centreX = rect.left + rect.width / 2;
+            centreY = rect.top + rect.height / 2;
+
+            const dx = e.clientX - centreX;
+            const dy = e.clientY - centreY;
+            lastAngle = Math.atan2(dy, dx);   // reference angle
+
+            canvas.setPointerCapture(e.pointerId);
+        }
+
+        function moveStage(e, canvas) {
+            if (!draggingStage) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            const dx = e.clientX - cx;
+            const dy = e.clientY - cy;
+            const curAngle = Math.atan2(dy, dx);
+
+            // difference in radians → degrees → add to stage
+            let delta = (curAngle - lastAngle) * 180 / Math.PI;
+            // keep the shortest turn
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
+
+            state.stage = (state.stage + delta + 360) % 360;
+
+            lastAngle = curAngle;
+
+            // sync UI slider
+            document.getElementById('stageSlide').value = state.stage;
+            document.getElementById('stageVal').innerText = state.stage.toFixed(0) + "°";
+
+            update();
+        }
+
+        function stopStageDrag(e, canvas) {
+            draggingStage = false;
+            canvas.releasePointerCapture(e.pointerId);
+        }
+
+        // ---- XPL canvas -------------------------------------------------
+        cvXPL.addEventListener('pointerdown', e => startStageDrag(e, cvXPL));
+        cvXPL.addEventListener('pointermove', e => moveStage(e, cvXPL));
+        cvXPL.addEventListener('pointerup', e => stopStageDrag(e, cvXPL));
+        cvXPL.addEventListener('pointercancel', e => stopStageDrag(e, cvXPL));
+
+        // ---- PPL canvas (same behaviour) -------------------------------
+        cvPPL.addEventListener('pointerdown', e => startStageDrag(e, cvPPL));
+        cvPPL.addEventListener('pointermove', e => moveStage(e, cvPPL));
+        cvPPL.addEventListener('pointerup', e => stopStageDrag(e, cvPPL));
+        cvPPL.addEventListener('pointercancel', e => stopStageDrag(e, cvPPL));
 
         /* -------------------------------
            Event listeners and bindings
@@ -1304,7 +1589,7 @@
                 if (id === 'nwIn') state.nw = parseFloat(e.target.value) || 1.0;
                 if (id === 'neIn') state.ne = parseFloat(e.target.value) || 1.0;
                 document.getElementById('presetSel').value = 'Custom';
-                state.system = 'hexagonal'; state.colW = minerals.Custom.colW; state.colE = minerals.Custom.colE;
+                state.system = 'zircon'; state.colW = minerals.Custom.colW; state.colE = minerals.Custom.colE;
                 update();
             });
         });
@@ -1321,6 +1606,11 @@
         const plateCheck = document.getElementById('plateCheck');
         plateCheck.addEventListener('change', (e) => {
             state.plateOn = e.target.checked;
+            update();
+        });
+
+        document.getElementById("zoomBoundaryBtn").addEventListener("click", () => {
+            state.zoomGrain = !state.zoomGrain;
             update();
         });
 
