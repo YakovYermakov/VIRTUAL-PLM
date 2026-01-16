@@ -12,9 +12,9 @@ You can download it and open it in any modern browser - on a computer, tablet, o
 ## 0. Installation and launch
 
 1. Download .html file from repository.
-2. Open in any browser
-3. Enjoy
-4. May not open properly on IPad, so it is recommended to use a laptop 
+2. Open in any browser.
+3. Enjoy!
+4. May not open properly on IPad, so it is recommended to use a laptop.
 
 ---
 
