@@ -9,6 +9,15 @@ You can download it and open it in any modern browser - on a computer, tablet, o
 
 ---
 
+## 0. Installation and launch
+
+1. [Download](https://github.com/YakovYermakov/VIRTUAL-PLM/blob/7ad0b535a906505d15ed3e26a825841fa8637b2b/indicatrix_v0.5.html) .html file from repository.
+2. Open in any browser.
+3. Enjoy!
+4. May not open properly on IPad, so it is recommended to use a laptop.
+
+---
+
 ## 1. Indicatrix
 
 <img width="931" height="459" alt="image" src="https://github.com/user-attachments/assets/65fcc31f-5bf6-4dc9-9507-78289965f490" />
