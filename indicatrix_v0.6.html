@@ -610,7 +610,7 @@
          * Indicatrix visualizer - main script
          * - Uses Three.js for a 3D indicatrix and a 2D canvas for auxiliary previews and the Michel-Lévy chart
          * - The code is structured into: helpers/constants, 3D scene setup, 2D canvas drawing utilities,
-         *   an `update()` routine that synchronizes UI and scene state, and event listeners.
+         * an `update()` routine that synchronizes UI and scene state, and event listeners.
          */
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -1068,8 +1068,6 @@
 
         /* Draw a PPL preview: a filled polygon approximating a grain with blended PPL colors.
            system - crystal system string, angle - cut angle in degrees. */
-        /* In drawPPL function: Stroke first, then fill */
-        /* In drawPPL function: Add zoom/pan logic similar to XPL */
         function drawPPL(system, angle, relief_width) {
             if (!ctxPPL) return;
             const { w, h } = resizeCanvas(cvPPL, ctxPPL);
@@ -1125,7 +1123,7 @@
             ctxPPL.restore();
         }
 
-        /* In drawXPL function: Update pan logic to center on corner */
+        /* Draw XPL view: now includes dynamic grain boundary color when plate is on */
         function drawXPL(bir, system, angle, relief_width) {
             if (!ctxXPL) return;
             const { w, h } = resizeCanvas(cvXPL, ctxXPL);
@@ -1208,7 +1206,8 @@
                 for (let i = 1; i < points.length; i++) ctxXPL.lineTo(points[i].x * layerScale, points[i].y * layerScale);
                 ctxXPL.closePath();
                 ctxXPL.lineWidth = relief_width;
-                ctxXPL.strokeStyle = '#111';
+                // FIX 1: Change stroke color based on plate status
+                ctxXPL.strokeStyle = state.plateOn ? plateColorStr : '#111';
                 ctxXPL.stroke();
             }
 
@@ -1253,9 +1252,11 @@
 
             ctxXPL.restore();
         }
+        
         /* Michel-Lévy chart drawing with Axis Labels */
         let mlcCache = null;
-        function drawMLChart(ret, thk, bir) {
+        // FIX 2 & 3: Updated signature to accept plate info
+        function drawMLChart(ret, thk, bir, plateOn, effectiveRet) {
             if (!ctxMLC) return;
             const { w, h } = resizeCanvas(cvMLC, ctxMLC);
 
@@ -1306,6 +1307,27 @@
                 }
                 ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, mTop + chH); ctxMLC.lineTo(ex, ey); ctxMLC.stroke();
             });
+
+            // FIX 2: Draw the current blue birefringence line
+            if (bir > 0) {
+                 const thickAtMaxRet = maxRet / (bir * 1000);
+                 let ex, ey;
+                 if (thickAtMaxRet <= maxThk) {
+                    ex = mLeft + chW; 
+                    ey = mTop + chH - (thickAtMaxRet / maxThk) * chH;
+                 } else {
+                    const retAtMaxThick = maxThk * bir * 1000;
+                    ex = mLeft + (retAtMaxThick / maxRet) * chW; 
+                    ey = mTop;
+                 }
+                 ctxMLC.strokeStyle = '#2196F3'; // Blue
+                 ctxMLC.lineWidth = 2;
+                 ctxMLC.beginPath(); 
+                 ctxMLC.moveTo(mLeft, mTop + chH); 
+                 ctxMLC.lineTo(ex, ey); 
+                 ctxMLC.stroke();
+            }
+
             ctxMLC.restore();
 
             // Axes box
@@ -1355,15 +1377,80 @@
                 ctxMLC.fillText(t, mLeft - 8, y + 4);
             }
 
-            // Current Value Marker (Unchanged)
+            // Current Value Marker (Red Dot)
             if (ret <= maxRet && thk <= maxThk) {
                 const mx = mLeft + (ret / maxRet) * chW;
                 const my = mTop + chH - (thk / maxThk) * chH;
-                ctxMLC.strokeStyle = 'red'; ctxMLC.lineWidth = 2;
+                
+                // Crosshairs
+                ctxMLC.strokeStyle = 'red'; ctxMLC.lineWidth = 1;
                 ctxMLC.beginPath(); ctxMLC.moveTo(mx, mTop); ctxMLC.lineTo(mx, mTop + chH); ctxMLC.stroke();
                 ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, my); ctxMLC.lineTo(mLeft + chW, my); ctxMLC.stroke();
+                
+                // Red Dot
                 ctxMLC.fillStyle = 'red'; ctxMLC.beginPath(); ctxMLC.arc(mx, my, 4, 0, Math.PI * 2); ctxMLC.fill();
+
+                // FIX 3: Plate Shift (Green Arrow + Dot)
+                if (plateOn) {
+                    const ex = mLeft + (effectiveRet / maxRet) * chW;
+                    // Clamp visual x to chart bounds for the line, but keep real logic
+                    const drawEx = Math.min(Math.max(mLeft, ex), mLeft + chW);
+                    
+                    ctxMLC.strokeStyle = '#00ff00'; 
+                    ctxMLC.lineWidth = 2;
+                    
+                    // Arrow line
+                    ctxMLC.beginPath(); 
+                    ctxMLC.moveTo(mx, my); 
+                    ctxMLC.lineTo(drawEx, my); 
+                    ctxMLC.stroke();
+
+                    // Arrow Head (Triangle)
+                    const headLen = 6;
+                    const angle = Math.atan2(0, drawEx - mx);
+                    ctxMLC.beginPath();
+                    ctxMLC.moveTo(drawEx, my);
+                    ctxMLC.lineTo(drawEx - headLen * Math.cos(angle - Math.PI / 6), my - headLen * Math.sin(angle - Math.PI / 6));
+                    ctxMLC.lineTo(drawEx - headLen * Math.cos(angle + Math.PI / 6), my - headLen * Math.sin(angle + Math.PI / 6));
+                    ctxMLC.fillStyle = '#00ff00';
+                    ctxMLC.fill();
+
+                    // Green Dot
+                    ctxMLC.beginPath(); ctxMLC.arc(drawEx, my, 4, 0, Math.PI * 2); ctxMLC.fill();
+                }
             }
+
+            // FIX 3 (Legend): Draw legend in bottom right
+            const legendX = mLeft + chW - 120;
+            const legendY = mTop + chH - 60;
+            
+            ctxMLC.fillStyle = "rgba(0,0,0,0.7)";
+            ctxMLC.fillRect(legendX, legendY, 115, 55);
+            ctxMLC.strokeStyle = "#555";
+            ctxMLC.strokeRect(legendX, legendY, 115, 55);
+
+            ctxMLC.font = "10px sans-serif";
+            ctxMLC.textAlign = "left";
+            
+            // Red Dot Legend
+            ctxMLC.fillStyle = "red";
+            ctxMLC.beginPath(); ctxMLC.arc(legendX + 10, legendY + 12, 3, 0, Math.PI * 2); ctxMLC.fill();
+            ctxMLC.fillStyle = "#ddd";
+            ctxMLC.fillText("Current State", legendX + 20, legendY + 15);
+
+            // Blue Line Legend
+            ctxMLC.strokeStyle = "#2196F3"; ctxMLC.lineWidth = 2;
+            ctxMLC.beginPath(); ctxMLC.moveTo(legendX + 5, legendY + 27); ctxMLC.lineTo(legendX + 15, legendY + 27); ctxMLC.stroke();
+            ctxMLC.fillStyle = "#ddd";
+            ctxMLC.fillText("Birefringence", legendX + 20, legendY + 30);
+
+            // Green Arrow Legend
+            ctxMLC.strokeStyle = "#00ff00"; ctxMLC.lineWidth = 2;
+            ctxMLC.beginPath(); ctxMLC.moveTo(legendX + 5, legendY + 42); ctxMLC.lineTo(legendX + 15, legendY + 42); ctxMLC.stroke();
+            ctxMLC.fillStyle = "#00ff00";
+            ctxMLC.beginPath(); ctxMLC.arc(legendX + 15, legendY + 42, 2, 0, Math.PI*2); ctxMLC.fill();
+            ctxMLC.fillStyle = "#ddd";
+            ctxMLC.fillText("Plate Shift", legendX + 20, legendY + 45);
         }
 
         /* -------------------------------
@@ -1395,12 +1482,6 @@
                 }
             });
 
-            arrowEPrime.traverse(function (child) {
-                if (child instanceof THREE.Mesh && child.material) {
-                    child.material.color.set(arrowEPrimeColor);
-                }
-            });
-
             // --- Relief based on actual E–W vibration direction (polarizer direction) ---
             const a = state.nw * state.scaleFactor;       // ellipse semi-axis along local X (nω)
             const b = nPrime * state.scaleFactor;         // ellipse semi-axis along local Y (nε')
@@ -1425,6 +1506,22 @@
             const retardation = state.thickness * bir * 1000;
             const colorStr = getInterferenceColor(retardation);
             const name = getOrderName(retardation);
+
+            // Calculate Effective Retardation for Plate Shift Logic (needed for ML Chart)
+            // This replicates the logic inside drawXPL but for the bulk crystal
+            let effectiveRet = retardation;
+            if (state.plateOn) {
+                const plateRet = 540;
+                const plateSlowAngle = 45;
+                const isEPrimeSlow = nPrime > state.nw;
+                let vibAngleOmega = state.stage % 180;
+                let vibAngleEPrime = (state.stage + 90) % 180;
+                const slowAngle = isEPrimeSlow ? vibAngleEPrime : vibAngleOmega;
+                let delta = Math.abs(slowAngle - plateSlowAngle) % 180;
+                delta = Math.min(delta, 180 - delta);
+                const isAdd = delta > 45;
+                effectiveRet = isAdd ? retardation + plateRet : Math.abs(retardation - plateRet);
+            }
 
             // Update UI elements (values and color swatch)
             document.getElementById('angleVal').innerText = state.angle.toFixed(1) + "°";
@@ -1505,7 +1602,8 @@
             drawInd2D(state.nw, nPrime);
             drawPPL(state.system, state.angle, relief_width);
             drawXPL(bir, state.system, state.angle, relief_width);
-            drawMLChart(retardation, state.thickness, bir);
+            // Pass effectiveRet and plate status to ML Chart
+            drawMLChart(retardation, state.thickness, bir, state.plateOn, effectiveRet);
         }
 
         let draggingStage = false;
