@@ -109,4 +109,4 @@ Bjørn Eske Sørensen; A revised Michel-Lévy interference colour chart based on
 ---
 
 ## 7. Behind the Scenes
-The initial structure of this tool was prompt-engineered with the assistance of several large language models, but the optical mineralogy theoretical base was manually revised and validated to make sure it behaves exactly as it should.
+The initial structure of this tool was prompt-engineered with the assistance of several large language models, but the optical mineralogy theoretical base was thoughtfully revised and validated to make sure it behaves exactly as it should and simulate real-life world of optical mineralogy!
