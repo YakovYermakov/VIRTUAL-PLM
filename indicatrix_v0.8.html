@@ -1,0 +1,2824 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIRTUAL-PLM — Interactive Optical Mineralogy Suite (v0.8)</title>
+    <style>
+        /* ==========================================================================
+           1. CORE THEME & RESETS
+           ========================================================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --sidebar-bg: #161b22;
+            --sidebar-border: rgba(255, 255, 255, 0.08);
+            --sidebar-width: 68px;
+
+            --text-main: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --accent: #4db8ff;
+            --highlight: #ffd700;
+            --border: #333;
+            --mlc-bg: #1a1a1a;
+
+            --win-bg: rgba(26, 32, 44, 0.94);
+            --win-header-bg: rgba(33, 41, 57, 0.97);
+            --win-border: rgba(255, 255, 255, 0.12);
+            --win-border-active: rgba(77, 184, 255, 0.55);
+            --win-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.4);
+            --win-shadow-active: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(77, 184, 255, 0.5), 0 0 20px rgba(77, 184, 255, 0.2);
+
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --font-ui: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Consolas, monospace;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: var(--font-ui);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.25);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* ==========================================================================
+           2. LEFT TOOLBOX DOCK
+           ========================================================================== */
+        #toolbox {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0 14px 0;
+            z-index: 10000;
+            flex-shrink: 0;
+            box-shadow: 3px 0 18px rgba(0, 0, 0, 0.5);
+        }
+
+        .tb-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+        }
+
+        /* Clean Text Logo */
+        .tb-text-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0 4px 0;
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+        }
+        .tb-logo-title {
+            font-family: var(--font-ui);
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: var(--accent);
+            line-height: 1.1;
+        }
+        .tb-logo-ver {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+            line-height: 1;
+        }
+
+        .tb-items {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            width: 100%;
+            padding: 0 8px;
+        }
+
+        .tb-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease;
+        }
+        .tb-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .tb-btn.active {
+            background: rgba(77, 184, 255, 0.15);
+            color: var(--accent);
+            border-color: rgba(77, 184, 255, 0.35);
+        }
+        .tb-btn svg {
+            width: 21px;
+            height: 21px;
+            stroke-width: 1.8;
+            transition: transform 0.15s;
+        }
+        .tb-btn:hover svg {
+            transform: scale(1.08);
+        }
+
+        .tb-dot {
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: transparent;
+            transition: background 0.15s;
+        }
+        .tb-btn.active .tb-dot {
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
+
+        /* Tooltip */
+        .tb-btn[data-tip]::after {
+            content: attr(data-tip);
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%) scale(0.95);
+            background: #1e293b;
+            color: #ffffff;
+            font-size: 0.76rem;
+            font-weight: 500;
+            padding: 5px 9px;
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.12);
+            z-index: 10001;
+        }
+        .tb-btn:hover[data-tip]::after {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
+
+        .tb-bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            width: 100%;
+            padding: 0 8px;
+            border-top: 1px solid var(--sidebar-border);
+            padding-top: 10px;
+        }
+
+        /* ==========================================================================
+           3. WORKSPACE CANVAS & CREDITS
+           ========================================================================== */
+        #workspace {
+            flex: 1;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at center, #242424 0%, #121212 100%),
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 32px 32px, 32px 32px;
+        }
+
+        #credits {
+            position: absolute;
+            bottom: 8px;
+            right: 20px;
+            font-size: 0.75rem;
+            color: #666;
+            pointer-events: none;
+            z-index: 1000;
+            font-style: italic;
+        }
+
+        /* ==========================================================================
+           4. MODULAR WINDOW FRAMEWORK
+           ========================================================================== */
+        .mod-window {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            background: var(--win-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--win-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--win-shadow);
+            overflow: hidden;
+            min-width: 280px;
+            min-height: 180px;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+            z-index: 10;
+        }
+
+        .mod-window.active-window {
+            border-color: var(--win-border-active);
+            box-shadow: var(--win-shadow-active);
+            z-index: 100;
+        }
+
+        .mod-window.is-minimized {
+            display: none !important;
+        }
+
+        .mod-window.is-maximized {
+            top: 8px !important;
+            left: 8px !important;
+            width: calc(100% - 16px) !important;
+            height: calc(100% - 16px) !important;
+            border-radius: var(--radius-sm);
+        }
+
+        .win-header {
+            height: 38px;
+            padding: 0 10px 0 12px;
+            background: var(--win-header-bg);
+            border-bottom: 1px solid var(--win-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: grab;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .win-header.dragging {
+            cursor: grabbing;
+        }
+
+        .win-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: 0.2px;
+        }
+        .win-title svg {
+            width: 17px;
+            height: 17px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .win-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .win-ctrl-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .win-ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+        .win-ctrl-btn.close:hover {
+            background: #ef4444;
+            color: #ffffff;
+        }
+        .win-ctrl-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+
+        .win-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            user-select: auto;
+            -webkit-user-select: auto;
+        }
+
+        /* Resize handles */
+        .win-resize {
+            position: absolute;
+            z-index: 1000;
+            touch-action: none;
+        }
+        .win-resize.n  { top: 0; left: 6px; right: 6px; height: 6px; cursor: ns-resize; }
+        .win-resize.s  { bottom: 0; left: 6px; right: 6px; height: 6px; cursor: ns-resize; }
+        .win-resize.e  { top: 6px; bottom: 6px; right: 0; width: 6px; cursor: ew-resize; }
+        .win-resize.w  { top: 6px; bottom: 6px; left: 0; width: 6px; cursor: ew-resize; }
+        .win-resize.nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nwse-resize; }
+        .win-resize.ne { top: 0; right: 0; width: 10px; height: 10px; cursor: nesw-resize; }
+        .win-resize.sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: nesw-resize; }
+        .win-resize.se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+
+        .win-resize.se::after {
+            content: "";
+            position: absolute;
+            right: 3px;
+            bottom: 3px;
+            width: 6px;
+            height: 6px;
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* ==========================================================================
+           5. CONTROLS, FORMS & FORMULAS (RESTORED TO ORIGINAL DESIGN)
+           ========================================================================== */
+        .content-padding {
+            padding: 12px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 6px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .control-group select:focus,
+        .control-group input[type="number"]:focus {
+            border-color: var(--accent);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #555;
+            border-radius: 2px;
+            outline: none;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(77, 184, 255, 0.5);
+        }
+
+        .pill-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 5px;
+        }
+        .pill-btn {
+            flex: 1;
+            padding: 3px 6px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 3px;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+        .pill-btn:hover {
+            background: #333;
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Toggle switches */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 18px;
+            vertical-align: middle;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #444;
+            transition: .2s;
+            border-radius: 18px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+        input:checked + .slider:before {
+            transform: translateX(16px);
+        }
+
+        /* Calculated Data Stats Grid */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .stat-box {
+            background: #252525;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent);
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .stat-value {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        /* Formula Box */
+        .formula-box {
+            background: #252525;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            border: 1px solid #333;
+        }
+        .formula-row {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .formula-row:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .formula-math {
+            font-family: var(--font-mono);
+            color: var(--highlight);
+            font-weight: bold;
+        }
+        .formula-math.blue {
+            color: var(--accent);
+        }
+
+        /* ==========================================================================
+           6. 3D INDICATRIX & PREVIEW STYLES
+           ========================================================================== */
+        #view3d {
+            width: 100%;
+            flex: 1;
+            min-height: 220px;
+            position: relative;
+            background: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
+            overflow: hidden;
+        }
+
+        #indOverlay {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 150px;
+            height: 150px;
+            background: rgba(20, 20, 20, 0.7);
+            border-radius: 6px;
+            border: 1px solid #444;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 10;
+        }
+        #canvasInd {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #legend3d {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            display: inline-block;
+            margin-right: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .crosshair-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .crosshair-overlay::before {
+            content: "";
+            position: absolute;
+            top: 50%; left: 0; right: 0; height: 1px;
+            background: rgba(100, 100, 100, 0.5);
+            transform: translateY(-50%);
+        }
+        .crosshair-overlay::after {
+            content: "";
+            position: absolute;
+            left: 50%; top: 0; bottom: 0; width: 1px;
+            background: rgba(100, 100, 100, 0.5);
+            transform: translateX(-50%);
+        }
+        #indOverlay .crosshair-overlay::before,
+        #indOverlay .crosshair-overlay::after {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 3D Window Bottom Control Bar */
+        .ind3d-controls-bar {
+            background: #1e1e1e;
+            border-top: 1px solid var(--border);
+            padding: 8px 12px;
+            flex-shrink: 0;
+        }
+
+        /* ==========================================================================
+           7. SINGLE SQUARE MICROSCOPE VIEW
+           ========================================================================== */
+        .microscope-wrap {
+            flex: 1;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            position: relative;
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        .microscope-square-box {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+            border: 1px solid #444;
+            overflow: hidden;
+            background: #eee;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            touch-action: none;
+        }
+        .microscope-square-box:active {
+            cursor: grabbing;
+        }
+
+        #canvasMicroscope {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .micro-mode-label {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            color: #000;
+            font-weight: bold;
+            font-size: 0.72rem;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 2px 7px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 5;
+            letter-spacing: 0.5px;
+        }
+
+        /* Accessory Plate Overlay */
+        #plateOverlay {
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+            width: 32px;
+            height: 52px;
+            z-index: 10;
+            pointer-events: none;
+            transform: translate(120%, 120%) rotate(-45deg);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease;
+        }
+        #plateOverlay.visible {
+            transform: translate(-18px, -10px) rotate(-45deg);
+            opacity: 1;
+        }
+
+        /* Analyzer Toggle Button */
+        .analyzer-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .analyzer-btn:hover {
+            border-color: var(--accent);
+        }
+        .analyzer-btn.active {
+            background: rgba(77, 184, 255, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 10px rgba(77, 184, 255, 0.25);
+        }
+        .analyzer-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .analyzer-btn.active .analyzer-indicator {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* ==========================================================================
+           8. MICHEL-LÉVY CHART & INTERFERENCE BAR
+           ========================================================================== */
+        #mlc-window-body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+            overflow: hidden;
+        }
+        #mlc-container {
+            flex: 1;
+            width: 100%;
+            background-color: var(--mlc-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #444;
+            min-height: 150px;
+        }
+        #canvasMLC {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #interference-order-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: #141820;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            min-height: 48px;
+            margin-top: 6px;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+        .mlc-stat-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            min-width: 0;
+            gap: 2px;
+        }
+        .mlc-stat-line1 {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        .mlc-stat-line2 {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        .mlc-stat-label {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+        .mlc-stat-val {
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+        .mlc-color-name {
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 0.84rem;
+        }
+        .mlc-color-order {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        #interference-order-color {
+            width: 18px;
+            height: 14px;
+            border-radius: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            flex-shrink: 0;
+        }
+        .mlc-stat-sep {
+            width: 1px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.12);
+            flex-shrink: 0;
+        }
+
+        /* ==========================================================================
+           9. LAB NOTES & HELP MODAL
+           ========================================================================== */
+        #notes-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+        }
+        .notes-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .notes-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: var(--radius-sm);
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: var(--text-main);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .notes-action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        #labNotesArea {
+            flex: 1;
+            width: 100%;
+            background: #141414;
+            border: 1px solid #444;
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            color: #e0e0e0;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+        #labNotesArea:focus {
+            border-color: var(--accent);
+        }
+
+
+    </style>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <!-- ==========================================================================
+         LEFT TOOLBOX DOCK
+         ========================================================================== -->
+    <aside id="toolbox">
+        <div class="tb-top">
+            <!-- Text Logo -->
+            <div class="tb-text-logo" id="brandBtn" title="VIRTUAL-PLM">
+                <div class="tb-logo-title">V-PLM</div>
+                <div class="tb-logo-ver">v0.8</div>
+            </div>
+
+            <!-- Window toggles -->
+            <nav class="tb-items">
+                <!-- 1. Mineral Configuration -->
+                <button class="tb-btn active" id="tb-config" data-win="win-config" data-tip="Mineral Parameters">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span class="tb-dot"></span>
+                </button>
+
+                <!-- 2. 3D Indicatrix Viewport -->
+                <button class="tb-btn active" id="tb-indicatrix" data-win="win-indicatrix" data-tip="3D Indicatrix">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <ellipse cx="12" cy="12" rx="10" ry="4"/>
+                        <line x1="12" y1="2" x2="12" y2="22"/>
+                    </svg>
+                    <span class="tb-dot"></span>
+                </button>
+
+                <!-- 3. Microscope View -->
+                <button class="tb-btn active" id="tb-microscope" data-win="win-microscope" data-tip="Microscope View">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0-7-7h1"/>
+                        <circle cx="9" cy="9" r="2"/><path d="m14 8 5-5 2 2-5 5"/><path d="m12 10 3 3"/>
+                    </svg>
+                    <span class="tb-dot"></span>
+                </button>
+
+                <!-- 4. Michel-Lévy Chart -->
+                <button class="tb-btn active" id="tb-chart" data-win="win-chart" data-tip="Michel-Lévy Chart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                        <path d="M4 20h16"/>
+                    </svg>
+                    <span class="tb-dot"></span>
+                </button>
+
+
+
+                <!-- 6. Lab Notes & Log -->
+                <button class="tb-btn" id="tb-notes" data-win="win-notes" data-tip="Lab Notes">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <span class="tb-dot"></span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="tb-bottom">
+            <!-- Tile Windows -->
+            <button class="tb-btn" id="tileBtn" data-tip="Tile Windows">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="8" height="8" rx="1"/>
+                    <rect x="13" y="3" width="8" height="8" rx="1"/>
+                    <rect x="3" y="13" width="8" height="8" rx="1"/>
+                    <rect x="13" y="13" width="8" height="8" rx="1"/>
+                </svg>
+            </button>
+
+            <!-- Reset Workspace -->
+            <button class="tb-btn" id="resetLayoutBtn" data-tip="Reset Workspace">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                    <path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                    <path d="M8 16H3v5"/>
+                </svg>
+            </button>
+
+            <!-- Optics Theory (Moved to bottom with Question Mark Icon) -->
+            <button class="tb-btn" id="tb-theory" data-win="win-theory" data-tip="Optics Theory">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>
+                </svg>
+                <span class="tb-dot"></span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ==========================================================================
+         MAIN WORKSPACE CANVAS
+         ========================================================================== -->
+    <main id="workspace">
+        <!-- Exact credits line from previous version -->
+        <div id="credits">Made by: Yakov Yermakov, 2025</div>
+
+        <!-- ====================================================================
+             WINDOW 1: MINERAL PARAMETERS
+             ==================================================================== -->
+        <div class="mod-window" id="win-config" style="top: 16px; left: 16px; width: 330px; height: 380px;">
+            <div class="win-header">
+                <div class="win-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>Mineral Parameters</span>
+                </div>
+                <div class="win-controls">
+                    <button class="win-ctrl-btn max" title="Maximize">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button class="win-ctrl-btn close" title="Close">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="win-body content-padding">
+                <div class="control-group">
+                    <label>
+                        <span>Mineral Preset</span>
+                        <span id="optSignBadge" style="color:var(--accent); font-size:0.8rem;">Uniaxial (+)</span>
+                    </label>
+                    <select id="presetSel">
+                        <option value="Quartz">Quartz</option>
+                        <option value="Calcite">Calcite</option>
+                        <option value="Tourmaline">Tourmaline</option>
+                        <option value="Zircon" selected>Zircon</option>
+                        <option value="Apatite">Apatite</option>
+                        <option value="Nepheline">Nepheline</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label><span>nω (Ordinary RI)</span></label>
+                    <input type="number" id="nwIn" value="1.924" step="0.001">
+                </div>
+
+                <div class="control-group">
+                    <label><span>nε (Extraordinary RI)</span></label>
+                    <input type="number" id="neIn" value="1.970" step="0.001">
+                </div>
+
+                <div class="control-group" style="margin-bottom:0;">
+                    <label>
+                        <span>Thickness (d)</span>
+                        <span id="thickVal" style="color:var(--accent);">30 µm</span>
+                    </label>
+                    <input type="range" id="thickSlide" min="5" max="100" step="1" value="30">
+                    <div class="pill-group">
+                        <button class="pill-btn" onclick="setThickness(20)">20 µm</button>
+                        <button class="pill-btn" onclick="setThickness(30)">30 µm (Standard)</button>
+                        <button class="pill-btn" onclick="setThickness(50)">50 µm</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Resize Handles -->
+            <div class="win-resize n"></div><div class="win-resize s"></div><div class="win-resize e"></div><div class="win-resize w"></div>
+            <div class="win-resize nw"></div><div class="win-resize ne"></div><div class="win-resize sw"></div><div class="win-resize se"></div>
+        </div>
+
+        <!-- ====================================================================
+             WINDOW 2: 3D INDICATRIX VIEWPORT (WITH CUT ANGLE CHANGER MOVED HERE)
+             ==================================================================== -->
+        <div class="mod-window" id="win-indicatrix" style="top: 16px; left: 360px; width: 490px; height: 490px;">
+            <div class="win-header">
+                <div class="win-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <ellipse cx="12" cy="12" rx="10" ry="4"/>
+                        <line x1="12" y1="2" x2="12" y2="22"/>
+                    </svg>
+                    <span>3D Indicatrix</span>
+                </div>
+                <div class="win-controls">
+                    <button class="win-ctrl-btn max" title="Maximize">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button class="win-ctrl-btn close" title="Close">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="win-body" style="overflow:hidden;">
+                <div id="view3d">
+                    <!-- 2D Cut Overlay (Restored 150x150 PiP) -->
+                    <div id="indOverlay">
+                        <canvas id="canvasInd"></canvas>
+                        <div class="crosshair-overlay"></div>
+                    </div>
+
+                    <!-- 3D Legend (Restored with all 7 items from v0.7) -->
+                    <div id="legend3d">
+                        <div class="legend-item"><div class="dot" style="background:red"></div> Optic Axis (C-Axis)</div>
+                        <div class="legend-item"><div class="dot" style="background:cyan"></div> nω (True Ordinary)</div>
+                        <div class="legend-item"><div class="dot" style="background:red"></div> nε (True Extraordinary)</div>
+                        <div class="legend-item"><div class="dot" style="background:magenta"></div> nε' (Apparent Extraordinary)</div>
+                        <div class="legend-item"><div class="dot" style="background:#ffd700"></div> Thin Section Cut</div>
+                        <div class="legend-item"><div class="dot" style="background:#999999"></div> Basal section (XY)</div>
+                        <div class="legend-item"><div class="dot" style="background:#222222"></div> Principal section (XZ)</div>
+                    </div>
+                </div>
+
+                <!-- 3D Controls Bar: Indicatrix Cut Angle changer + 3D Zoom -->
+                <div class="ind3d-controls-bar">
+                    <div class="control-group" style="margin-bottom:6px;">
+                        <label>
+                            <span>Indicatrix Cut Angle</span>
+                            <span id="angleVal" style="color:var(--accent);">45.0°</span>
+                        </label>
+                        <input type="range" id="angleSlide" min="0" max="90" step="0.5" value="45">
+                        <div class="pill-group">
+                            <button class="pill-btn" onclick="setCutAngle(0)">Basal (0°)</button>
+                            <button class="pill-btn" onclick="setCutAngle(45)">45° Cut</button>
+                            <button class="pill-btn" onclick="setCutAngle(90)">Principal (90°)</button>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding-top:4px; border-top:1px solid #333;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.75rem; color:var(--text-muted);">3D Zoom:</span>
+                            <input id="zoomSlider" type="range" min="0.5" max="1.5" step="0.01" value="1.0" style="width:85px; margin-top:0;">
+                            <span id="zoomVal" style="color:#fff; font-size:0.75rem; min-width:36px;">1.00x</span>
+                        </div>
+                        <button class="pill-btn" id="resetCamBtn" style="flex:none; padding:3px 8px;">Reset View</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Resize Handles -->
+            <div class="win-resize n"></div><div class="win-resize s"></div><div class="win-resize e"></div><div class="win-resize w"></div>
+            <div class="win-resize nw"></div><div class="win-resize ne"></div><div class="win-resize sw"></div><div class="win-resize se"></div>
+        </div>
+
+        <!-- ====================================================================
+             WINDOW 3: MICROSCOPE VIEW (SINGLE SQUARE VIEWPORT WITH ANALYZER)
+             ==================================================================== -->
+        <div class="mod-window" id="win-microscope" style="top: 16px; left: 865px; width: 450px; height: 490px;">
+            <div class="win-header">
+                <div class="win-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0-7-7h1"/>
+                        <circle cx="9" cy="9" r="2"/><path d="m14 8 5-5 2 2-5 5"/><path d="m12 10 3 3"/>
+                    </svg>
+                    <span>Microscope View</span>
+                </div>
+                <div class="win-controls">
+                    <button class="win-ctrl-btn max" title="Maximize">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button class="win-ctrl-btn close" title="Close">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="win-body">
+                <!-- Single Square Microscope Viewport -->
+                <div class="microscope-wrap" id="microWrap">
+                    <div class="microscope-square-box" id="microBox">
+                        <canvas id="canvasMicroscope"></canvas>
+                        <div class="crosshair-overlay"></div>
+                        <div class="micro-mode-label" id="microModeLabel">PPL View</div>
+
+                        <!-- Gypsum Plate SVG Indicator -->
+                        <div id="plateOverlay">
+                            <svg width="100%" height="100%" viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="2" width="56" height="96" rx="2" fill="white" stroke="black" stroke-width="2" />
+                                <circle cx="30" cy="30" r="20" fill="none" stroke="black" stroke-width="2" />
+                                <line x1="18" y1="75" x2="42" y2="75" stroke="black" stroke-width="6" />
+                                <polygon points="18,65 5,75 18,85" fill="black" />
+                                <polygon points="42,65 55,75 42,85" fill="black" />
+                                <text x="30" y="62" font-family="Arial" font-size="19" font-weight="bold" text-anchor="middle" fill="black">Slow</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Microscope Controls -->
+                <div class="content-padding" style="padding-top:8px; border-top:1px solid #333; background:#1e1e1e; flex-shrink:0;">
+                    <!-- Mineral Rotation -->
+                    <div class="control-group" style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="margin-bottom:0;">
+                                <span>Mineral Rotation</span>
+                                <span id="stageVal" style="color:var(--accent); font-weight:bold;">45°</span>
+                            </label>
+                            <span style="font-size:0.72rem; color:var(--text-muted);">Drag canvas to rotate</span>
+                        </div>
+                        <input type="range" id="stageSlide" min="0" max="360" step="1" value="45">
+                    </div>
+
+                    <!-- Toggles: Analyzer (matching switch style), Accessory Plate, Zoom -->
+                    <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.8rem; color:var(--text-main); margin-top:6px; align-items:center;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <span>Analyzer (XPL):</span>
+                            <label class="switch">
+                                <input type="checkbox" id="analyzerCheck">
+                                <span class="slider"></span>
+                            </label>
+                        </label>
+
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <span>Accessory Plate (540nm):</span>
+                            <label class="switch">
+                                <input type="checkbox" id="plateCheck">
+                                <span class="slider"></span>
+                            </label>
+                        </label>
+
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <span>Zoom to Grain Boundary:</span>
+                            <label class="switch">
+                                <input type="checkbox" id="zoomBoundaryBtn">
+                                <span class="slider"></span>
+                            </label>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <!-- Resize Handles -->
+            <div class="win-resize n"></div><div class="win-resize s"></div><div class="win-resize e"></div><div class="win-resize w"></div>
+            <div class="win-resize nw"></div><div class="win-resize ne"></div><div class="win-resize sw"></div><div class="win-resize se"></div>
+        </div>
+
+        <!-- ====================================================================
+             WINDOW 4: MICHEL-LÉVY CHART
+             ==================================================================== -->
+        <div class="mod-window" id="win-chart" style="top: 520px; left: 16px; width: 720px; height: 420px;">
+            <div class="win-header">
+                <div class="win-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                        <path d="M4 20h16"/>
+                    </svg>
+                    <span>Michel-Lévy Chart</span>
+                </div>
+                <div class="win-controls">
+                    <button class="win-ctrl-btn max" title="Maximize">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button class="win-ctrl-btn close" title="Close">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="win-body" id="mlc-window-body">
+                <div id="mlc-container">
+                    <canvas id="canvasMLC"></canvas>
+                </div>
+                <!-- Interference color swatch + Apparent Bir + Retardation + Max Bir (2-line layout) -->
+                <div id="interference-order-display">
+                    <!-- 1. Interference Color: Color on line 1, Order on line 2 -->
+                    <div class="mlc-stat-col">
+                        <div class="mlc-stat-line1">
+                            <div id="interference-order-color"></div>
+                            <span class="mlc-color-name" id="intColorName">Interference Color</span>
+                        </div>
+                        <div class="mlc-stat-line2">
+                            <span class="mlc-color-order" id="intOrderName">Order</span>
+                        </div>
+                        <!-- Hidden text node for compatibility -->
+                        <span id="interference-order-text" style="display:none;"></span>
+                    </div>
+
+                    <div class="mlc-stat-sep"></div>
+
+                    <!-- 2. Apparent Birefringence: Label on line 1, Number on line 2 -->
+                    <div class="mlc-stat-col">
+                        <div class="mlc-stat-line1">
+                            <span class="mlc-stat-label">Apparent Birefringence (δ')</span>
+                        </div>
+                        <div class="mlc-stat-line2">
+                            <span class="mlc-stat-val" id="appBir" style="color:var(--accent);">0.0000</span>
+                        </div>
+                    </div>
+
+                    <div class="mlc-stat-sep"></div>
+
+                    <!-- 3. Retardation: Label on line 1, Number on line 2 -->
+                    <div class="mlc-stat-col">
+                        <div class="mlc-stat-line1">
+                            <span class="mlc-stat-label">Retardation (Γ)</span>
+                        </div>
+                        <div class="mlc-stat-line2">
+                            <span class="mlc-stat-val" id="retVal" style="color:var(--highlight);">0 nm</span>
+                        </div>
+                    </div>
+
+                    <div class="mlc-stat-sep"></div>
+
+                    <!-- 4. Max Birefringence: Label on line 1, Number on line 2 -->
+                    <div class="mlc-stat-col">
+                        <div class="mlc-stat-line1">
+                            <span class="mlc-stat-label">Max Birefringence</span>
+                        </div>
+                        <div class="mlc-stat-line2">
+                            <span class="mlc-stat-val" id="maxBir" style="color:#ffffff;">0.0000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Resize Handles -->
+            <div class="win-resize n"></div><div class="win-resize s"></div><div class="win-resize e"></div><div class="win-resize w"></div>
+            <div class="win-resize nw"></div><div class="win-resize ne"></div><div class="win-resize sw"></div><div class="win-resize se"></div>
+        </div>
+
+        <!-- ====================================================================
+             WINDOW 5: OPTICS THEORY (REPLACING OLD GUIDE/HELP; OFF BY DEFAULT)
+             ==================================================================== -->
+        <div class="mod-window is-minimized" id="win-theory" style="top: 520px; left: 750px; width: 400px; height: 420px;">
+            <div class="win-header">
+                <div class="win-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>
+                    </svg>
+                    <span>Optics Theory</span>
+                </div>
+                <div class="win-controls">
+                    <button class="win-ctrl-btn max" title="Maximize">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button class="win-ctrl-btn close" title="Close">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="win-body content-padding" style="overflow-y:auto;">
+                <div class="formula-box" style="margin-top:0;">
+                    <div class="formula-row">
+                        <strong>Apparent birefringence:</strong> <span class="formula-math blue">δ' = |nε' - nω|</span><br>
+                        Difference between the two allowed refractive indices on the cut.<br>
+                        <em>Notice the difference between apparent and maximum birefringence.</em>
+                    </div>
+                    <div class="formula-row">
+                        <strong>Retardation:</strong> <span class="formula-math">Γ = d × δ' × 1000</span><br>
+                        Path difference (nm) = Thickness (µm) × Birefringence × 1000.<br>
+                        Path difference accumulated as the slow ray lags behind the fast ray through thickness d.<br>
+                        <em>Determines interference color.</em>
+                    </div>
+                    <div class="formula-row">
+                        <strong>Fast vs. Slow Rays:</strong><br>
+                        Light splits into two rays vibrating 90° apart.<br>
+                        Lower <span class="formula-math">n</span> = <strong>Fast Ray</strong> (Velocity is higher)<br>
+                        Higher <span class="formula-math">n</span> = <strong>Slow Ray</strong> (Velocity is lower)
+                    </div>
+                    <div class="formula-row" style="margin-bottom:0;">
+                        <strong>Accessory Plate Rule:</strong><br>
+                        If the <span style="color: var(--highlight);">Slow Ray</span> vibration direction of the mineral aligns with the <span style="color: var(--highlight);">Slow Ray</span> of the gypsum plate, retardations <strong>add</strong> (interference colors shift up). If they cross, they <strong>subtract</strong> (shift down).
+                    </div>
+                </div>
+            </div>
+            <!-- Resize Handles -->
+            <div class="win-resize n"></div><div class="win-resize s"></div><div class="win-resize e"></div><div class="win-resize w"></div>
+            <div class="win-resize nw"></div><div class="win-resize ne"></div><div class="win-resize sw"></div><div class="win-resize se"></div>
+        </div>
+
+        <!-- ====================================================================
+             WINDOW 6: LAB NOTES & OBSERVATION LOG
+             ==================================================================== -->
+        <div class="mod-window" id="win-notes" class="mod-window is-minimized" style="top: 520px; left: 1165px; width: 340px; height: 420px;">
+            <div class="win-header">
+                <div class="win-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <span>Lab Notes</span>
+                </div>
+                <div class="win-controls">
+                    <button class="win-ctrl-btn max" title="Maximize">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button class="win-ctrl-btn close" title="Close">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="win-body" id="notes-container">
+                <div class="notes-toolbar">
+                    <button class="notes-action-btn" id="logObservationBtn" title="Append current mineral data to notes">
+                        <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>Log Current Reading</span>
+                    </button>
+                    <div style="display:flex; gap:6px;">
+                        <button class="notes-action-btn" id="exportNotesBtn" title="Download notes as markdown">
+                            <span>Export</span>
+                        </button>
+                        <button class="notes-action-btn" id="clearNotesBtn" title="Clear notes">
+                            <span>Clear</span>
+                        </button>
+                    </div>
+                </div>
+                <textarea id="labNotesArea" placeholder="# Optical Mineralogy Lab Notes&#10;Click 'Log Current Reading' above to record observations..."></textarea>
+            </div>
+            <!-- Resize Handles -->
+            <div class="win-resize n"></div><div class="win-resize s"></div><div class="win-resize e"></div><div class="win-resize w"></div>
+            <div class="win-resize nw"></div><div class="win-resize ne"></div><div class="win-resize sw"></div><div class="win-resize se"></div>
+        </div>
+    </main>
+
+    <!-- (Guide/Help modal replaced with Theory window) -->
+
+    <!-- ==========================================================================
+         JAVASCRIPT CODE
+         ========================================================================== -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /* --------------------------------------------------------------------------
+           1. WINDOW MANAGER
+           -------------------------------------------------------------------------- */
+        class WindowManager {
+            constructor() {
+                this.workspace = document.getElementById('workspace');
+                this.windows = new Map();
+                this.topZ = 100;
+                this.dragState = null;
+                this.resizeState = null;
+                this.initListeners();
+            }
+
+            register(id, defaultBounds, isOpenByDefault = true) {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                const winObj = {
+                    id,
+                    el,
+                    header: el.querySelector('.win-header'),
+                    bounds: defaultBounds || { x: 20, y: 20, w: 400, h: 350 },
+                    prevBounds: null,
+                    isOpen: isOpenByDefault,
+                    isMax: false
+                };
+                if (!isOpenByDefault) {
+                    el.classList.add('is-minimized');
+                }
+
+                this.windows.set(id, winObj);
+                this.applyBounds(winObj);
+
+                el.addEventListener('pointerdown', () => this.focus(id));
+
+                if (winObj.header) {
+                    winObj.header.setAttribute('tabindex', '0');
+                    winObj.header.addEventListener('pointerdown', (e) => this.startDrag(e, winObj));
+                    winObj.header.addEventListener('keydown', (e) => this.handleKeyboardMove(e, winObj));
+                }
+
+                const btnMax = el.querySelector('.win-ctrl-btn.max');
+                const btnClose = el.querySelector('.win-ctrl-btn.close');
+
+                if (btnMax) btnMax.addEventListener('click', (e) => { e.stopPropagation(); this.toggleMaximize(id); });
+                if (btnClose) btnClose.addEventListener('click', (e) => { e.stopPropagation(); this.close(id); });
+
+                el.querySelectorAll('.win-resize').forEach(handle => {
+                    handle.addEventListener('pointerdown', (e) => this.startResize(e, winObj, handle));
+                });
+
+                const ro = new ResizeObserver(() => {
+                    this.adjustMicroscopeSquare();
+                    window.dispatchEvent(new Event('resize'));
+                });
+                ro.observe(el);
+            }
+
+            adjustMicroscopeSquare() {
+                const wrap = document.getElementById('microWrap');
+                const box = document.getElementById('microBox');
+                if (wrap && box) {
+                    const side = Math.max(120, Math.min(wrap.clientWidth - 16, wrap.clientHeight - 16));
+                    box.style.width = `${side}px`;
+                    box.style.height = `${side}px`;
+                }
+            }
+
+            focus(id) {
+                const win = this.windows.get(id);
+                if (!win) return;
+                this.topZ += 1;
+                win.el.style.zIndex = this.topZ;
+
+                this.windows.forEach(w => w.el.classList.remove('active-window'));
+                win.el.classList.add('active-window');
+
+                document.querySelectorAll('.tb-btn[data-win]').forEach(btn => {
+                    const wid = btn.getAttribute('data-win');
+                    const w = this.windows.get(wid);
+                    if (w && w.isOpen) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+
+            open(id) {
+                const win = this.windows.get(id);
+                if (!win) return;
+                win.isOpen = true;
+                win.el.classList.remove('is-minimized');
+                this.focus(id);
+                this.adjustMicroscopeSquare();
+            }
+
+            close(id) {
+                const win = this.windows.get(id);
+                if (!win) return;
+                win.isOpen = false;
+                win.el.classList.add('is-minimized');
+
+                const tbBtn = document.querySelector(`.tb-btn[data-win="${id}"]`);
+                if (tbBtn) tbBtn.classList.remove('active');
+            }
+
+            toggle(id) {
+                const win = this.windows.get(id);
+                if (!win) return;
+                if (win.isOpen && win.el.classList.contains('active-window')) {
+                    this.close(id);
+                } else if (win.isOpen) {
+                    this.focus(id);
+                } else {
+                    this.open(id);
+                }
+            }
+
+            toggleMaximize(id) {
+                const win = this.windows.get(id);
+                if (!win) return;
+                win.isMax = !win.isMax;
+                if (win.isMax) {
+                    win.prevBounds = { ...win.bounds };
+                    win.el.classList.add('is-maximized');
+                } else {
+                    win.el.classList.remove('is-maximized');
+                    if (win.prevBounds) {
+                        win.bounds = { ...win.prevBounds };
+                        this.applyBounds(win);
+                    }
+                }
+                this.focus(id);
+                setTimeout(() => {
+                    this.adjustMicroscopeSquare();
+                    window.dispatchEvent(new Event('resize'));
+                }, 50);
+            }
+
+            applyBounds(win) {
+                win.el.style.left = `${win.bounds.x}px`;
+                win.el.style.top = `${win.bounds.y}px`;
+                win.el.style.width = `${win.bounds.w}px`;
+                win.el.style.height = `${win.bounds.h}px`;
+            }
+
+            startDrag(e, win) {
+                if (e.button !== 0 || e.target.closest('button, select, input, .win-ctrl-btn')) return;
+                this.focus(win.id);
+                if (win.isMax) return;
+
+                const rect = win.el.getBoundingClientRect();
+                const wsRect = this.workspace.getBoundingClientRect();
+
+                this.dragState = {
+                    win,
+                    offsetX: e.clientX - rect.left,
+                    offsetY: e.clientY - rect.top,
+                    wsRect
+                };
+
+                win.header.setPointerCapture(e.pointerId);
+                win.header.classList.add('dragging');
+            }
+
+            handleDrag(e) {
+                if (!this.dragState) return;
+                const { win, offsetX, offsetY, wsRect } = this.dragState;
+
+                let left = e.clientX - wsRect.left - offsetX;
+                let top = e.clientY - wsRect.top - offsetY;
+
+                const maxLeft = Math.max(0, wsRect.width - win.bounds.w);
+                const maxTop = Math.max(0, wsRect.height - 40);
+
+                left = Math.max(0, Math.min(left, maxLeft));
+                top = Math.max(0, Math.min(top, maxTop));
+
+                win.bounds.x = left;
+                win.bounds.y = top;
+                win.el.style.left = `${left}px`;
+                win.el.style.top = `${top}px`;
+            }
+
+            endDrag(e) {
+                if (!this.dragState) return;
+                this.dragState.win.header.classList.remove('dragging');
+                try {
+                    this.dragState.win.header.releasePointerCapture(e.pointerId);
+                } catch (_) {}
+                this.dragState = null;
+            }
+
+            handleKeyboardMove(e, win) {
+                if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+                e.preventDefault();
+                const step = 15;
+                const wsRect = this.workspace.getBoundingClientRect();
+
+                if (e.key === 'ArrowLeft') win.bounds.x = Math.max(0, win.bounds.x - step);
+                if (e.key === 'ArrowRight') win.bounds.x = Math.min(wsRect.width - win.bounds.w, win.bounds.x + step);
+                if (e.key === 'ArrowUp') win.bounds.y = Math.max(0, win.bounds.y - step);
+                if (e.key === 'ArrowDown') win.bounds.y = Math.min(wsRect.height - 40, win.bounds.y + step);
+
+                this.applyBounds(win);
+            }
+
+            startResize(e, win, handle) {
+                if (e.button !== 0) return;
+                e.stopPropagation();
+                this.focus(win.id);
+                if (win.isMax) return;
+
+                const dir = Array.from(handle.classList).find(c => ['n','s','e','w','nw','ne','sw','se'].includes(c));
+                if (!dir) return;
+
+                this.resizeState = {
+                    win,
+                    dir,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    startBounds: { ...win.bounds }
+                };
+
+                handle.setPointerCapture(e.pointerId);
+            }
+
+            handleResize(e) {
+                if (!this.resizeState) return;
+                const { win, dir, startX, startY, startBounds } = this.resizeState;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                let { x, y, w, h } = startBounds;
+                const minW = 280, minH = 180;
+
+                if (dir.includes('e')) w = Math.max(minW, startBounds.w + dx);
+                if (dir.includes('s')) h = Math.max(minH, startBounds.h + dy);
+                if (dir.includes('w')) {
+                    const proposedW = startBounds.w - dx;
+                    if (proposedW >= minW) {
+                        w = proposedW;
+                        x = startBounds.x + dx;
+                    }
+                }
+                if (dir.includes('n')) {
+                    const proposedH = startBounds.h - dy;
+                    if (proposedH >= minH) {
+                        h = proposedH;
+                        y = startBounds.y + dy;
+                    }
+                }
+
+                win.bounds = { x, y, w, h };
+                this.applyBounds(win);
+                this.adjustMicroscopeSquare();
+            }
+
+            endResize(e) {
+                if (!this.resizeState) return;
+                this.resizeState = null;
+            }
+
+            initListeners() {
+                window.addEventListener('pointermove', (e) => {
+                    if (this.dragState) this.handleDrag(e);
+                    if (this.resizeState) this.handleResize(e);
+                });
+                window.addEventListener('pointerup', (e) => {
+                    if (this.dragState) this.endDrag(e);
+                    if (this.resizeState) this.endResize(e);
+                });
+                window.addEventListener('pointercancel', (e) => {
+                    if (this.dragState) this.endDrag(e);
+                    if (this.resizeState) this.endResize(e);
+                });
+            }
+
+            tile() {
+                const openWindows = Array.from(this.windows.values()).filter(w => w.isOpen);
+                if (openWindows.length === 0) return;
+
+                const wsRect = this.workspace.getBoundingClientRect();
+                const pad = 12;
+                const count = openWindows.length;
+
+                let cols = count <= 2 ? count : count <= 4 ? 2 : 3;
+                let rows = Math.ceil(count / cols);
+
+                const cellW = (wsRect.width - pad * (cols + 1)) / cols;
+                const cellH = (wsRect.height - pad * (rows + 1)) / rows;
+
+                openWindows.forEach((win, index) => {
+                    win.isMax = false;
+                    win.el.classList.remove('is-maximized');
+                    const r = Math.floor(index / cols);
+                    const c = index % cols;
+
+                    win.bounds = {
+                        x: Math.round(pad + c * (cellW + pad)),
+                        y: Math.round(pad + r * (cellH + pad)),
+                        w: Math.round(cellW),
+                        h: Math.round(cellH)
+                    };
+                    this.applyBounds(win);
+                });
+
+                this.adjustMicroscopeSquare();
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            resetLayout() {
+                const defaults = {
+                    'win-config':     { x: 16,  y: 16,  w: 330, h: 380 },
+                    'win-indicatrix': { x: 360, y: 16,  w: 490, h: 490 },
+                    'win-microscope': { x: 865, y: 16,  w: 450, h: 490 },
+                    'win-chart':      { x: 16,  y: 520, w: 720, h: 420 },
+                    'win-theory':     { x: 750, y: 520, w: 400, h: 420 },
+                    'win-notes':      { x: 1165,y: 520, w: 340, h: 420 }
+                };
+
+                this.windows.forEach((win, id) => {
+                    win.isMax = false;
+                    win.el.classList.remove('is-maximized');
+                    if (defaults[id]) {
+                        win.bounds = { ...defaults[id] };
+                        this.applyBounds(win);
+                    }
+                });
+
+                // By default: parameters, indicatrix, microscope, chart are open; theory and notes are off
+                ['win-config', 'win-indicatrix', 'win-microscope', 'win-chart'].forEach(id => this.open(id));
+                ['win-theory', 'win-notes'].forEach(id => this.close(id));
+
+                this.adjustMicroscopeSquare();
+                window.dispatchEvent(new Event('resize'));
+            }
+        }
+
+        const wm = new WindowManager();
+
+        wm.register('win-config',     { x: 16,  y: 16,  w: 330, h: 380 }, true);
+        wm.register('win-indicatrix', { x: 360, y: 16,  w: 490, h: 490 }, true);
+        wm.register('win-microscope', { x: 865, y: 16,  w: 450, h: 490 }, true);
+        wm.register('win-chart',      { x: 16,  y: 520, w: 720, h: 420 }, true);
+        wm.register('win-theory',     { x: 750, y: 520, w: 400, h: 420 }, false);
+        wm.register('win-notes',      { x: 1165,y: 520, w: 340, h: 420 }, false);
+
+        document.querySelectorAll('.tb-btn[data-win]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const wid = btn.getAttribute('data-win');
+                wm.toggle(wid);
+            });
+        });
+
+        document.getElementById('tileBtn').addEventListener('click', () => wm.tile());
+        document.getElementById('resetLayoutBtn').addEventListener('click', () => wm.resetLayout());
+
+
+
+        /* --------------------------------------------------------------------------
+           2. SCIENTIFIC DATA & FUNCTIONS (EXACT COLOR MATH FROM v0.7)
+           -------------------------------------------------------------------------- */
+        const COLOR_LUT = [
+            { retardation: 0, color: 'Black', order: '1st order' }, { retardation: 40, color: 'Iron gray', order: '1st order' }, { retardation: 97, color: 'Lavender gray', order: '1st order' }, { retardation: 158, color: 'Gray blue', order: '1st order' }, { retardation: 218, color: 'clear gray', order: '1st order' }, { retardation: 234, color: 'greenish white', order: '1st order' }, { retardation: 259, color: 'nearly pure white', order: '1st order' }, { retardation: 267, color: 'Yellowish white', order: '1st order' }, { retardation: 275, color: 'pale straw yellow', order: '1st order' }, { retardation: 281, color: 'straw yellow', order: '1st order' }, { retardation: 306, color: 'light yellow', order: '1st order' }, { retardation: 332, color: 'bright yellow', order: '1st order' }, { retardation: 430, color: 'brown yellow', order: '1st order' }, { retardation: 505, color: 'red-orange', order: '1st order' }, { retardation: 536, color: 'red', order: '1st order' }, { retardation: 551, color: 'deep red', order: '1st order' }, { retardation: 565, color: 'purple', order: '2nd order' }, { retardation: 575, color: 'violet', order: '2nd order' }, { retardation: 589, color: 'indigo', order: '2nd order' }, { retardation: 664, color: 'sky blue', order: '2nd order' }, { retardation: 728, color: 'greenish blue', order: '2nd order' }, { retardation: 747, color: 'green', order: '2nd order' }, { retardation: 826, color: 'light green', order: '2nd order' }, { retardation: 843, color: 'yellowish green', order: '2nd order' }, { retardation: 866, color: 'greenish yellow', order: '2nd order' }, { retardation: 910, color: 'pure yellow', order: '2nd order' }, { retardation: 948, color: 'orange', order: '2nd order' }, { retardation: 998, color: 'bright orange-red', order: '2nd order' }, { retardation: 1101, color: 'dark violet-red', order: '2nd order' }, { retardation: 1128, color: 'light bluish violet', order: '3rd order' }, { retardation: 1151, color: 'indigo', order: '3rd order' }, { retardation: 1258, color: 'greenish blue', order: '3rd order' }, { retardation: 1334, color: 'sea green', order: '3rd order' }, { retardation: 1376, color: 'lustrous green', order: '3rd order' }, { retardation: 1426, color: 'greenish yellow', order: '3rd order' }, { retardation: 1495, color: 'flesh color', order: '3rd order' }, { retardation: 1534, color: 'carmine red', order: '3rd order' }, { retardation: 1621, color: 'dull purple', order: '3rd order' }, { retardation: 1652, color: 'violet-gray', order: '4th order' }, { retardation: 1682, color: 'Gray blue', order: '4th order' }, { retardation: 1711, color: 'dull sea green', order: '4th order' }, { retardation: 1744, color: 'bluish green', order: '4th order' }
+        ];
+
+        const minerals = {
+            'Zircon':     { nw: 1.924, ne: 1.970, sys: 'zircon',     colW: [230, 210, 190], colE: [255, 255, 255] },
+            'Quartz':     { nw: 1.544, ne: 1.553, sys: 'quartz',     colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Calcite':    { nw: 1.658, ne: 1.486, sys: 'calcite',    colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Tourmaline': { nw: 1.631, ne: 1.610, sys: 'tourmaline', colW: [30, 60, 30],   colE: [200, 220, 200] },
+            'Apatite':    { nw: 1.629, ne: 1.624, sys: 'apatite',    colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Nepheline':  { nw: 1.529, ne: 1.526, sys: 'nepheline',  colW: [255, 255, 255], colE: [255, 255, 255] },
+            'Custom':     { nw: 1.000, ne: 1.500, sys: 'zircon',     colW: [255, 255, 255], colE: [255, 255, 255] }
+        };
+
+        const cie31 = [
+            { l: 380, x: 0.0014, y: 0.0000, z: 0.0065 }, { l: 390, x: 0.0042, y: 0.0001, z: 0.0201 }, { l: 400, x: 0.0143, y: 0.0004, z: 0.0679 }, { l: 410, x: 0.0435, y: 0.0012, z: 0.2074 }, { l: 420, x: 0.1344, y: 0.0040, z: 0.6456 }, { l: 430, x: 0.2839, y: 0.0116, z: 1.3856 }, { l: 440, x: 0.3483, y: 0.0230, z: 1.7471 }, { l: 450, x: 0.3362, y: 0.0380, z: 1.7721 }, { l: 460, x: 0.2908, y: 0.0600, z: 1.6692 }, { l: 470, x: 0.1954, y: 0.0910, z: 1.2876 }, { l: 480, x: 0.0956, y: 0.1390, z: 0.8130 }, { l: 490, x: 0.0320, y: 0.2080, z: 0.4652 }, { l: 500, x: 0.0049, y: 0.3230, z: 0.2720 }, { l: 510, x: 0.0093, y: 0.5030, z: 0.1582 }, { l: 520, x: 0.0633, y: 0.7100, z: 0.0782 }, { l: 530, x: 0.1655, y: 0.8620, z: 0.0422 }, { l: 540, x: 0.2904, y: 0.9540, z: 0.0203 }, { l: 550, x: 0.4334, y: 0.9950, z: 0.0087 }, { l: 560, x: 0.5945, y: 0.9950, z: 0.0039 }, { l: 570, x: 0.7621, y: 0.9520, z: 0.0021 }, { l: 580, x: 0.9163, y: 0.8700, z: 0.0017 }, { l: 590, x: 1.0263, y: 0.7570, z: 0.0011 }, { l: 600, x: 1.0622, y: 0.6310, z: 0.0008 }, { l: 610, x: 1.0026, y: 0.5030, z: 0.0003 }, { l: 620, x: 0.8544, y: 0.3810, z: 0.0002 }, { l: 630, x: 0.6424, y: 0.2650, z: 0.0000 }, { l: 640, x: 0.4479, y: 0.1750, z: 0.0000 }, { l: 650, x: 0.2835, y: 0.1070, z: 0.0000 }, { l: 660, x: 0.1649, y: 0.0610, z: 0.0000 }, { l: 670, x: 0.0874, y: 0.0320, z: 0.0000 }, { l: 680, x: 0.0468, y: 0.0170, z: 0.0000 }, { l: 690, x: 0.0227, y: 0.0082, z: 0.0000 }, { l: 700, x: 0.0114, y: 0.0041, z: 0.0000 }, { l: 720, x: 0.0029, y: 0.0010, z: 0.0000 }, { l: 740, x: 0.0007, y: 0.0002, z: 0.0000 }, { l: 760, x: 0.0002, y: 0.0001, z: 0.0000 }
+        ];
+
+        const colorCache = new Map();
+
+        function lerpColor(c1, c2, t) {
+            t = Math.max(0, Math.min(1, t));
+            return [
+                Math.round(c1[0] + (c2[0] - c1[0]) * t),
+                Math.round(c1[1] + (c2[1] - c1[1]) * t),
+                Math.round(c1[2] + (c2[2] - c1[2]) * t)
+            ];
+        }
+
+        function sRGBCompanding(v) {
+            if (v <= 0.0031308) return 12.92 * v;
+            return 1.055 * Math.pow(v, 1.0 / 2.4) - 0.055;
+        }
+
+        function calculateColor(retardationNM) {
+            let X = 0, Y = 0, Z = 0;
+            for (let i = 0; i < cie31.length; i++) {
+                const lam = cie31[i].l;
+                const theta = (Math.PI * retardationNM) / lam;
+                const intensity = Math.sin(theta) * Math.sin(theta);
+                X += intensity * cie31[i].x;
+                Y += intensity * cie31[i].y;
+                Z += intensity * cie31[i].z;
+            }
+
+            const norm = 0.09;
+            X *= norm; Y *= norm; Z *= norm;
+
+            let r = 3.2406 * X - 1.5372 * Y - 0.4986 * Z;
+            let g = -0.9693 * X + 1.8760 * Y + 0.0416 * Z;
+            let b = 0.0134 * X - 0.1184 * Y + 1.0154 * Z;
+
+            r = Math.min(1, Math.max(0, r)); g = Math.min(1, Math.max(0, g)); b = Math.min(1, Math.max(0, b));
+            r = sRGBCompanding(r); g = sRGBCompanding(g); b = sRGBCompanding(b);
+            return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+        }
+
+        function getInterferenceColor(ret) {
+            const r = Math.round(ret);
+            if (r <= 0) return 'rgb(0,0,0)';
+            if (r > 3500) return 'rgb(250,250,250)';
+            if (colorCache.has(r)) return colorCache.get(r);
+            const col = calculateColor(r);
+            colorCache.set(r, col);
+            return col;
+        }
+
+        function getColorInfo(nm) {
+            if (nm > COLOR_LUT[COLOR_LUT.length - 1].retardation) {
+                return { color: "High Order", order: "Iridescent" };
+            }
+            for (let i = COLOR_LUT.length - 1; i >= 0; i--) {
+                const entry = COLOR_LUT[i];
+                if (nm >= entry.retardation) {
+                    const capColor = entry.color.charAt(0).toUpperCase() + entry.color.slice(1);
+                    return { color: capColor, order: entry.order };
+                }
+            }
+            return { color: "Black", order: "1st order" };
+        }
+
+        function getOrderName(nm) {
+            const info = getColorInfo(nm);
+            return `${info.color} (${info.order})`;
+        }
+
+        function getGrainPoints(system, angleDeg) {
+            const t = angleDeg / 90;
+            const lerp = (start, end) => start + (end - start) * t;
+            const points = [];
+            if (system === 'quartz') {
+                const hex = [{ x: 0, y: -1 }, { x: 0.866, y: -0.5 }, { x: 0.866, y: 0.5 }, { x: 0, y: 1 }, { x: -0.866, y: 0.5 }, { x: -0.866, y: -0.5 }];
+                const rect = [{ x: 0, y: -1.8 }, { x: 0.866, y: -1.0 }, { x: 0.866, y: 1.0 }, { x: 0, y: 1.8 }, { x: -0.866, y: 1.0 }, { x: -0.866, y: -1.0 }];
+                for (let i = 0; i < 6; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else if (system === 'zircon') {
+                const sq = [
+                    { x: 0, y: -0.7 }, { x: -0.7, y: -0.7 }, { x: -0.7, y: 0.7 },
+                    { x: 0, y: 0.7 }, { x: 0.7, y: 0.7 }, { x: 0.7, y: -0.7 }
+                ];
+                const termScale = 0.7;
+                const rect = [
+                    { x: 0, y: -2.5 * termScale }, { x: -0.7, y: -1.8 * termScale }, { x: -0.7, y: 1.8 * termScale },
+                    { x: 0, y: 2.5 * termScale }, { x: 0.7, y: 1.8 * termScale }, { x: 0.7, y: -1.8 * termScale }
+                ];
+                for (let i = 0; i < 6; i++) points.push({ x: lerp(sq[i].x, rect[i].x), y: lerp(sq[i].y, rect[i].y) });
+            } else if (system === 'calcite') {
+                const rhomb = [{ x: 0, y: -0.5 }, { x: 0.8, y: -0.5 }, { x: 0, y: 1 }, { x: -0.8, y: -0.5 }];
+                const longRhomb = [{ x: 0, y: -1 }, { x: 1.5, y: 0 }, { x: 0, y: 1 }, { x: -1.5, y: 0 }];
+                for (let i = 0; i < 4; i++) points.push({ x: lerp(rhomb[i].x, longRhomb[i].x), y: lerp(rhomb[i].y, longRhomb[i].y) });
+            } else if (system === 'tourmaline') {
+                const hex = [
+                    { x: 0.40, y: 0.80 }, { x: 0.90, y: 0.00 }, { x: 0.90, y: -0.45 },
+                    { x: 0.40, y: -0.75 }, { x: 0.00, y: -0.75 }, { x: -0.40, y: -0.75 },
+                    { x: -0.90, y: -0.45 }, { x: -0.90, y: 0.00 }, { x: -0.40, y: 0.80 }, { x: 0.0, y: 1.00 }
+                ];
+                const rect = [
+                    { x: 0.40 + 0.3, y: 0.80 + 0.8 }, { x: 0.90, y: 0.00 + 1.4 }, { x: 0.90, y: -0.45 - 1 },
+                    { x: 0.40, y: -0.75 - 0.95 }, { x: 0.00, y: -0.75 - 1.05 }, { x: -0.40, y: -0.75 - 0.95 },
+                    { x: -0.90, y: -0.45 - 1 }, { x: -0.90, y: 0.00 + 1.4 }, { x: -0.40 - 0.3, y: 0.80 + 0.8 }, { x: 0.0, y: 1.00 + 0.8 }
+                ];
+                for (let i = 0; i < 10; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else if (system === 'apatite') {
+                const hex = [{ x: 0.5, y: -0.866 }, { x: 1, y: 0 }, { x: 1, y: 0 }, { x: 0.5, y: 0.866 }, { x: -0.5, y: 0.866 }, { x: -1, y: 0 }, { x: -1, y: 0 }, { x: -0.5, y: -0.866 }];
+                const rect = [{ x: 0.5, y: -1.866 }, { x: 1, y: -1.5 }, { x: 1, y: 1.5 }, { x: 0.5, y: 1.866 }, { x: -0.5, y: 1.866 }, { x: -1, y: 1.5 }, { x: -1, y: -1.5 }, { x: -0.5, y: -1.866 }];
+                for (let i = 0; i < 8; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else if (system === 'nepheline') {
+                const hex = [{ x: 0.5, y: -0.866 }, { x: 1, y: 0 }, { x: 0.5, y: 0.866 }, { x: -0.5, y: 0.866 }, { x: -1, y: 0 }, { x: -0.5, y: -0.866 }];
+                const rect = [{ x: 1.2, y: -1.2 }, { x: 1.2, y: 0 }, { x: 1.2, y: 1.2 }, { x: -1.2, y: 1.2 }, { x: -1.2, y: 0 }, { x: -1.2, y: -1.2 }];
+                for (let i = 0; i < 6; i++) points.push({ x: lerp(hex[i].x, rect[i].x), y: lerp(hex[i].y, rect[i].y) });
+            } else {
+                const rhomb = [{ x: 0, y: -1 }, { x: 0.8, y: 0 }, { x: 0, y: 1 }, { x: -0.8, y: 0 }];
+                const longRhomb = [{ x: 0.5, y: -2 }, { x: 0.8, y: 0.5 }, { x: -0.5, y: 2 }, { x: -0.8, y: -0.5 }];
+                for (let i = 0; i < 4; i++) points.push({ x: lerp(rhomb[i].x, longRhomb[i].x), y: lerp(rhomb[i].y, longRhomb[i].y) });
+            }
+            return points;
+        }
+
+        /* --------------------------------------------------------------------------
+           3. THREE.JS 3D SCENE SETUP (EXACT AS v0.7)
+           -------------------------------------------------------------------------- */
+        const view3d = document.getElementById('view3d');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(40, (view3d.clientWidth || 400) / (view3d.clientHeight || 400), 0.1, 100);
+        camera.position.set(4, 3, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(view3d.clientWidth || 400, view3d.clientHeight || 400);
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        view3d.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = false;
+        controls.enableZoom = false; // zoom is controlled by slider
+        controls.target.set(-0.5, 0, 0);
+
+        document.getElementById('resetCamBtn').addEventListener('click', () => {
+            camera.position.set(4, 3, 5);
+            controls.target.set(-0.5, 0, 0);
+            controls.update();
+        });
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        const indicatrixGroup = new THREE.Group();
+        indicatrixGroup.position.x = -0.5;
+        scene.add(indicatrixGroup);
+
+        function makeUnitEllipse(color = 0x777777, opacity = 0.12, segments = 128) {
+            const shape = new THREE.Shape();
+            for (let i = 0; i <= segments; i++) {
+                const t = (i / segments) * Math.PI * 2;
+                shape.lineTo(Math.cos(t), Math.sin(t));
+            }
+            const geom = new THREE.ShapeGeometry(shape);
+            const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false });
+            const mesh = new THREE.Mesh(geom, mat);
+
+            const pts = shape.getPoints(segments);
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const outline = new THREE.LineLoop(lineGeo, new THREE.LineBasicMaterial({ color }));
+
+            const grp = new THREE.Group();
+            grp.add(mesh);
+            grp.add(outline);
+            return grp;
+        }
+
+        const basalSection = makeUnitEllipse(0x999999, 0.12);
+        basalSection.renderOrder = 0;
+        basalSection.position.copy(indicatrixGroup.position);
+        scene.add(basalSection);
+
+        const principalSection = makeUnitEllipse(0x222222, 0.12);
+        principalSection.rotation.x = Math.PI / 2;
+        principalSection.renderOrder = 0;
+        principalSection.position.copy(indicatrixGroup.position);
+        scene.add(principalSection);
+
+        const sphereMat = new THREE.MeshPhongMaterial({ color: 0x00aaff, transparent: true, opacity: 0.4, shininess: 80, side: THREE.DoubleSide, depthWrite: false });
+        const ellipsoid = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), sphereMat);
+        indicatrixGroup.add(ellipsoid);
+
+        const cAxisGeo = new THREE.CylinderGeometry(0.02, 0.02, 2, 6);
+        const cAxisMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+        const opticAxis = new THREE.Mesh(cAxisGeo, cAxisMat);
+        indicatrixGroup.add(opticAxis);
+
+        const planeGroup = new THREE.Group();
+        planeGroup.position.x = -0.5;
+        scene.add(planeGroup);
+
+        const planeGeo = new THREE.CircleGeometry(1, 64);
+        const planeMesh = new THREE.Mesh(planeGeo, new THREE.MeshBasicMaterial({ color: 0xffd700, side: THREE.DoubleSide, transparent: true, opacity: 0.2, depthWrite: false }));
+        planeGroup.add(planeMesh);
+
+        const cutOutlineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2, depthTest: false, depthWrite: false });
+        const cutOutline = new THREE.LineLoop(new THREE.BufferGeometry(), cutOutlineMat);
+        planeGroup.add(cutOutline);
+
+        function makeArrow(color) {
+            const group = new THREE.Group();
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 12), new THREE.MeshBasicMaterial({ color }));
+            shaft.position.y = 0.5;
+            group.add(shaft);
+
+            const head = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.125, 12), new THREE.MeshBasicMaterial({ color }));
+            head.position.y = 1.0;
+            group.add(head);
+
+            group.rotation.x = Math.PI / 2;
+            return group;
+        }
+
+        const arrowOmega = makeArrow(0x00ffff);
+        const arrowEPrime = makeArrow(0xff00ff);
+        const arrowEpsilon = makeArrow(0xff1111);
+        planeGroup.add(arrowOmega);
+        planeGroup.add(arrowEPrime);
+        indicatrixGroup.add(arrowEpsilon);
+
+        /* --------------------------------------------------------------------------
+           4. APPLICATION STATE
+           -------------------------------------------------------------------------- */
+        const Zircon = minerals.Zircon;
+        const state = {
+            nw: Zircon.nw,
+            ne: Zircon.ne,
+            angle: 45,
+            thickness: 30,
+            stage: 45,
+            scaleFactor: 1.0,
+            system: Zircon.sys,
+            colW: Zircon.colW,
+            colE: Zircon.colE,
+            analyzerOn: false,   // false = PPL mode, true = XPL mode
+            plateOn: false,      // accessory plate toggle
+            zoomGrain: false
+        };
+
+        const cvInd = document.getElementById('canvasInd'); const ctxInd = cvInd?.getContext('2d');
+        const cvMicro = document.getElementById('canvasMicroscope'); const ctxMicro = cvMicro?.getContext('2d');
+        const cvMLC = document.getElementById('canvasMLC'); const ctxMLC = cvMLC?.getContext('2d');
+
+        function resizeCanvas(canvas, ctx) {
+            if (!canvas) return { w: 100, h: 100 };
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return { w: 100, h: 100 };
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            if (ctx) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr); }
+            return { w: rect.width, h: rect.height };
+        }
+
+        /* 2D Cut Ellipse Preview (Exact v0.7 with numbers on axes) */
+        function drawInd2D(rx, ry) {
+            if (!ctxInd) return;
+            const { w, h } = resizeCanvas(cvInd, ctxInd);
+            const cx = w / 2, cy = h / 2;
+            ctxInd.clearRect(0, 0, w, h);
+
+            const maxAxis = Math.max(Math.abs(rx), Math.abs(ry), 0.0001);
+            const avail = Math.min(w, h) / 2 * 0.8;
+            const scale = avail / maxAxis;
+            const srx = rx * scale; const sry = ry * scale;
+            const stageRad = state.stage * Math.PI / 180;
+
+            ctxInd.save();
+            ctxInd.translate(cx, cy);
+            ctxInd.rotate(stageRad);
+
+            ctxInd.beginPath(); ctxInd.ellipse(0, 0, srx, sry, 0, 0, Math.PI * 2);
+            ctxInd.lineWidth = 2; ctxInd.strokeStyle = '#aaa'; ctxInd.stroke();
+            ctxInd.fillStyle = 'rgba(0,100,255,0.1)'; ctxInd.fill();
+
+            const head = 8;
+            // nΩ arrow (cyan)
+            ctxInd.strokeStyle = 'cyan';
+            ctxInd.lineWidth = 2;
+            ctxInd.beginPath(); ctxInd.moveTo(0, 0); ctxInd.lineTo(srx, 0); ctxInd.stroke();
+            ctxInd.beginPath(); ctxInd.moveTo(srx, 0); ctxInd.lineTo(srx - head, -head / 2); ctxInd.lineTo(srx - head, head / 2); ctxInd.closePath(); ctxInd.stroke();
+
+            // nε' arrow (cyan if 0°, red if 90°, magenta otherwise)
+            let ePrimeStroke = 'magenta';
+            if (Math.abs(state.angle - 0) < 1e-6) ePrimeStroke = 'cyan';
+            else if (Math.abs(state.angle - 90) < 1e-6) ePrimeStroke = 'red';
+
+            ctxInd.strokeStyle = ePrimeStroke;
+            ctxInd.beginPath(); ctxInd.moveTo(0, 0); ctxInd.lineTo(0, -sry); ctxInd.stroke();
+            ctxInd.beginPath(); ctxInd.moveTo(0, -sry); ctxInd.lineTo(-head / 2, -sry + head); ctxInd.lineTo(head / 2, -sry + head); ctxInd.closePath(); ctxInd.stroke();
+
+            // Labels with numeric values on each axis
+            ctxInd.font = 'bold 14px sans-serif';
+            ctxInd.save();
+            ctxInd.translate(srx / 2, 20);
+            ctxInd.rotate(-stageRad);
+            ctxInd.fillStyle = 'cyan'; ctxInd.textAlign = 'center'; ctxInd.textBaseline = 'middle';
+            ctxInd.fillText(`${rx.toFixed(3)}`, 0, 0);
+            ctxInd.restore();
+
+            ctxInd.save();
+            ctxInd.translate(-25, -sry / 2);
+            ctxInd.rotate(-stageRad);
+            ctxInd.fillStyle = ePrimeStroke;
+            ctxInd.textAlign = 'center'; ctxInd.textBaseline = 'middle';
+            ctxInd.fillText(`${ry.toFixed(3)}`, 0, 0);
+            ctxInd.restore();
+
+            ctxInd.restore();
+        }
+
+        /* --------------------------------------------------------------------------
+           5. SINGLE MICROSCOPE VIEW (PPL & XPL VIA ANALYZER BUTTON)
+           -------------------------------------------------------------------------- */
+        function drawMicroscope(bir, system, angle, relief_width) {
+            if (!ctxMicro) return;
+            const { w, h } = resizeCanvas(cvMicro, ctxMicro);
+            const cx = w / 2, cy = h / 2;
+            const points = getGrainPoints(system, angle);
+            const stageRad = state.stage * Math.PI / 180;
+            const zoom = state.zoomGrain ? 3 : 1;
+            const baseScale = Math.min(w, h) * 0.25 * zoom;
+
+            let panX = 0, panY = 0;
+            if (state.zoomGrain) {
+                let minY = points[0].y;
+                let corner = points[0];
+                for (let p of points) {
+                    if (p.y < minY) { minY = p.y; corner = p; }
+                }
+                const maxThickness = state.thickness;
+                const thicknessFraction = (maxThickness > 0) ? 1 / maxThickness : 0;
+                const currentScale = 1.0 - (0.2 * thicknessFraction);
+                const layerScale = baseScale * currentScale;
+
+                const lx = corner.x * layerScale;
+                const ly = corner.y * layerScale;
+                const cosPhi = Math.cos(stageRad);
+                const sinPhi = Math.sin(stageRad);
+                panX = -(cosPhi * lx - sinPhi * ly);
+                panY = -(sinPhi * lx + cosPhi * ly);
+            }
+
+            if (!state.analyzerOn) {
+                // ---- PPL MODE ----
+                ctxMicro.clearRect(0, 0, w, h);
+                ctxMicro.fillStyle = '#f8fafc';
+                ctxMicro.fillRect(0, 0, w, h);
+
+                const t_cut = angle / 90;
+                const colEPrime = lerpColor(state.colW, state.colE, t_cut);
+                const intensityOmega = Math.cos(stageRad) ** 2;
+                const intensityEPrime = Math.sin(stageRad) ** 2;
+
+                const r = Math.round((state.colW[0] * intensityOmega + colEPrime[0] * intensityEPrime));
+                const g = Math.round((state.colW[1] * intensityOmega + colEPrime[1] * intensityEPrime));
+                const b = Math.round((state.colW[2] * intensityOmega + colEPrime[2] * intensityEPrime));
+                const colorStr = `rgb(${r}, ${g}, ${b})`;
+
+                const scale = Math.min(w, h) * 0.25 * zoom;
+
+                ctxMicro.save();
+                ctxMicro.translate(cx + panX, cy + panY);
+                ctxMicro.rotate(stageRad);
+                ctxMicro.beginPath();
+                ctxMicro.moveTo(points[0].x * scale, points[0].y * scale);
+                for (let i = 1; i < points.length; i++) ctxMicro.lineTo(points[i].x * scale, points[i].y * scale);
+                ctxMicro.closePath();
+
+                ctxMicro.lineWidth = relief_width;
+                ctxMicro.strokeStyle = '#111';
+                ctxMicro.stroke();
+                ctxMicro.fillStyle = colorStr;
+                ctxMicro.fill();
+                ctxMicro.restore();
+
+            } else {
+                // ---- XPL MODE ----
+                const plateRet = 540;
+                const plateSlowAngle = 45;
+                let isAdd = false;
+                const plateColorStr = getInterferenceColor(plateRet);
+                const plateMatch = plateColorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                const pr = parseInt(plateMatch[1]), pg = parseInt(plateMatch[2]), pb = parseInt(plateMatch[3]);
+
+                if (state.plateOn) {
+                    const rad = state.angle * Math.PI / 180;
+                    const cos = Math.cos(rad);
+                    const sin = Math.sin(rad);
+                    const term = (cos * cos) / (state.nw * state.nw) + (sin * sin) / (state.ne * state.ne);
+                    const nPrime = Math.sqrt(1 / term);
+                    const isEPrimeSlow = nPrime > state.nw;
+                    let vibAngleOmega = state.stage % 180;
+                    let vibAngleEPrime = (state.stage + 90) % 180;
+                    const slowAngle = isEPrimeSlow ? vibAngleEPrime : vibAngleOmega;
+                    let delta = Math.abs(slowAngle - plateSlowAngle) % 180;
+                    delta = Math.min(delta, 180 - delta);
+                    isAdd = delta > 45;
+
+                    ctxMicro.fillStyle = plateColorStr;
+                    ctxMicro.fillRect(0, 0, w, h);
+                } else {
+                    ctxMicro.clearRect(0, 0, w, h);
+                }
+
+                ctxMicro.save();
+                ctxMicro.translate(cx + panX, cy + panY);
+                ctxMicro.rotate(stageRad);
+
+                const maxThickness = state.thickness;
+                const tau = stageRad;
+                const T_rotation = Math.pow(Math.sin(2 * tau), 2);
+
+                if (maxThickness > 0) {
+                    const thicknessFraction = 1 / maxThickness;
+                    const currentScale = 1.0 - (0.2 * thicknessFraction);
+                    const layerScale = baseScale * currentScale;
+                    ctxMicro.beginPath();
+                    ctxMicro.moveTo(points[0].x * layerScale, points[0].y * layerScale);
+                    for (let i = 1; i < points.length; i++) ctxMicro.lineTo(points[i].x * layerScale, points[i].y * layerScale);
+                    ctxMicro.closePath();
+                    ctxMicro.lineWidth = relief_width;
+                    ctxMicro.strokeStyle = state.plateOn ? plateColorStr : '#111';
+                    ctxMicro.stroke();
+                }
+
+                for (let d = 1; d <= maxThickness; d++) {
+                    let ret = d * bir * 1000;
+                    let effective_ret = ret;
+                    if (state.plateOn) {
+                        effective_ret = isAdd ? ret + plateRet : Math.abs(ret - plateRet);
+                    }
+                    const rawColorStr = getInterferenceColor(effective_ret);
+                    const match = rawColorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (!match) continue;
+                    let r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3]);
+
+                    if (state.plateOn) {
+                        r = pr + (r - pr) * T_rotation;
+                        g = pg + (g - pg) * T_rotation;
+                        b = pb + (b - pb) * T_rotation;
+
+                        r = Math.round(Math.max(0, Math.min(255, r)));
+                        g = Math.round(Math.max(0, Math.min(255, g)));
+                        b = Math.round(Math.max(0, Math.min(255, b)));
+                    } else {
+                        r = Math.round(r * T_rotation);
+                        g = Math.round(g * T_rotation);
+                        b = Math.round(b * T_rotation);
+                    }
+
+                    const thicknessFraction = d / maxThickness;
+                    const currentScale = 1.0 - (0.2 * thicknessFraction);
+                    const layerScale = baseScale * currentScale;
+
+                    ctxMicro.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    ctxMicro.lineWidth = 0;
+                    ctxMicro.beginPath();
+                    ctxMicro.moveTo(points[0].x * layerScale, points[0].y * layerScale);
+                    for (let i = 1; i < points.length; i++) ctxMicro.lineTo(points[i].x * layerScale, points[i].y * layerScale);
+                    ctxMicro.closePath();
+                    ctxMicro.fill();
+                }
+
+                ctxMicro.restore();
+            }
+        }
+
+        /* --------------------------------------------------------------------------
+           6. MICHEL-LÉVY CHART (EXACT CODE RESTORED FROM v0.7)
+           -------------------------------------------------------------------------- */
+        let mlcCache = null;
+
+        function drawMLChart(ret, thk, bir, plateOn, effectiveRet) {
+            if (!ctxMLC) return;
+            const { w, h } = resizeCanvas(cvMLC, ctxMLC);
+
+            const mLeft = 45, mBot = 40, mTop = 10, mRight = 20;
+            const chW = w - mLeft - mRight, chH = h - mBot - mTop;
+            const maxRet = 1800, maxThk = 50;
+            if (chW <= 0 || chH <= 0) return;
+
+            if (!mlcCache || mlcCache.width !== Math.floor(chW)) {
+                const tempCan = document.createElement('canvas');
+                tempCan.width = chW; tempCan.height = 1;
+                const tempCtx = tempCan.getContext('2d');
+                const id = tempCtx.createImageData(chW, 1);
+                const rowColors = new Uint8Array(Math.floor(chW) * 4);
+                for (let x = 0; x < chW; x++) {
+                    const nm = (x / chW) * maxRet;
+                    const colStr = getInterferenceColor(nm);
+                    const parts = colStr.match(/\d+/g)?.map(Number) || [0, 0, 0];
+                    rowColors[x * 4] = parts[0]; rowColors[x * 4 + 1] = parts[1]; rowColors[x * 4 + 2] = parts[2]; rowColors[x * 4 + 3] = 255;
+                }
+                id.data.set(rowColors);
+                tempCtx.putImageData(id, 0, 0);
+                mlcCache = tempCan;
+            }
+
+            ctxMLC.clearRect(0, 0, w, h);
+            ctxMLC.fillStyle = '#222'; ctxMLC.fillRect(0, 0, w, h);
+            ctxMLC.imageSmoothingEnabled = false;
+            ctxMLC.drawImage(mlcCache, mLeft, mTop, chW, chH);
+
+            // Birefringence lines
+            ctxMLC.save(); ctxMLC.beginPath(); ctxMLC.rect(mLeft, mTop, chW, chH); ctxMLC.clip();
+            const birLines = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.05, 0.06, 0.08, 0.1, 0.15, 0.2];
+            ctxMLC.lineWidth = 1; ctxMLC.strokeStyle = 'rgba(255,255,255,0.4)'; ctxMLC.font = 'bold 12px sans-serif';
+            birLines.forEach(b => {
+                const thickAtMaxRet = maxRet / (b * 1000);
+                let ex, ey;
+                ctxMLC.fillStyle = '#ddd';
+                if (thickAtMaxRet <= maxThk) {
+                    ex = mLeft + chW; ey = mTop + chH - (thickAtMaxRet / maxThk) * chH;
+                    ctxMLC.textAlign = 'right'; ctxMLC.fillText(b.toFixed(3), ex - 2, ey - 2);
+                } else {
+                    const retAtMaxThick = maxThk * b * 1000;
+                    ex = mLeft + (retAtMaxThick / maxRet) * chW; ey = mTop;
+                    ctxMLC.textAlign = 'center'; ctxMLC.fillText(b.toFixed(3), ex, ey + 12);
+                }
+                ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, mTop + chH); ctxMLC.lineTo(ex, ey); ctxMLC.stroke();
+            });
+
+            // Current blue birefringence line
+            if (bir > 0) {
+                const thickAtMaxRet = maxRet / (bir * 1000);
+                let ex, ey;
+                if (thickAtMaxRet <= maxThk) {
+                    ex = mLeft + chW; ey = mTop + chH - (thickAtMaxRet / maxThk) * chH;
+                } else {
+                    const retAtMaxThick = maxThk * bir * 1000;
+                    ex = mLeft + (retAtMaxThick / maxRet) * chW; ey = mTop;
+                }
+                ctxMLC.strokeStyle = '#2196F3';
+                ctxMLC.lineWidth = 2;
+                ctxMLC.beginPath();
+                ctxMLC.moveTo(mLeft, mTop + chH);
+                ctxMLC.lineTo(ex, ey);
+                ctxMLC.stroke();
+            }
+
+            ctxMLC.restore();
+
+            // Axes box
+            ctxMLC.strokeStyle = '#555'; ctxMLC.strokeRect(mLeft, mTop, w - mLeft - mRight, h - mTop - mBot);
+
+            // Axis Labels
+            ctxMLC.fillStyle = '#aaa';
+            ctxMLC.font = '14px sans-serif';
+
+            // X Axis Label
+            ctxMLC.textAlign = 'center';
+            ctxMLC.fillText("Retardation (nm)", mLeft + chW / 2, h - 5);
+
+            // Y Axis Label (Rotated)
+            ctxMLC.save();
+            ctxMLC.translate(15, mTop + chH / 2);
+            ctxMLC.rotate(-Math.PI / 2);
+            ctxMLC.textAlign = 'center';
+            ctxMLC.fillText("Thickness (µm)", 0, 0);
+            ctxMLC.restore();
+
+            // Ticks and Numbers
+            ctxMLC.fillStyle = '#ddd'; ctxMLC.font = 'bold 12px sans-serif'; ctxMLC.textAlign = 'center';
+            for (let r = 0; r <= maxRet; r += 200) {
+                const x = mLeft + (r / maxRet) * chW;
+                ctxMLC.beginPath(); ctxMLC.moveTo(x, mTop + chH); ctxMLC.lineTo(x, mTop + chH + 6); ctxMLC.stroke();
+                ctxMLC.fillText(r, x, mTop + chH + 18);
+            }
+
+            // Order dots
+            ctxMLC.fillStyle = 'red';
+            const orderSeparators = [551, 1102, 1653, 2204, 2755, 3306];
+            orderSeparators.forEach(sep => {
+                const x = mLeft + (sep / maxRet) * chW;
+                if (x <= mLeft + chW) {
+                    ctxMLC.beginPath(); ctxMLC.arc(x, mTop + chH + 12, 3, 0, Math.PI * 2); ctxMLC.fill();
+                }
+            });
+
+            // Y Axis Ticks
+            ctxMLC.textAlign = 'right';
+            for (let t = 0; t <= maxThk; t += 10) {
+                const y = mTop + chH - (t / maxThk) * chH;
+                ctxMLC.fillStyle = '#ddd';
+                ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, y); ctxMLC.lineTo(mLeft - 6, y); ctxMLC.stroke();
+                ctxMLC.fillText(t, mLeft - 8, y + 4);
+            }
+
+            // Red Dot + Crosshairs
+            if (ret <= maxRet && thk <= maxThk) {
+                const mx = mLeft + (ret / maxRet) * chW;
+                const my = mTop + chH - (thk / maxThk) * chH;
+
+                ctxMLC.strokeStyle = 'red'; ctxMLC.lineWidth = 1;
+                ctxMLC.beginPath(); ctxMLC.moveTo(mx, mTop); ctxMLC.lineTo(mx, mTop + chH); ctxMLC.stroke();
+                ctxMLC.beginPath(); ctxMLC.moveTo(mLeft, my); ctxMLC.lineTo(mLeft + chW, my); ctxMLC.stroke();
+
+                ctxMLC.fillStyle = 'red'; ctxMLC.beginPath(); ctxMLC.arc(mx, my, 4, 0, Math.PI * 2); ctxMLC.fill();
+
+                // Plate Shift Arrow
+                if (plateOn) {
+                    const ex = mLeft + (effectiveRet / maxRet) * chW;
+                    const drawEx = Math.min(Math.max(mLeft, ex), mLeft + chW);
+
+                    ctxMLC.strokeStyle = '#00ff00';
+                    ctxMLC.lineWidth = 2;
+
+                    ctxMLC.beginPath();
+                    ctxMLC.moveTo(mx, my);
+                    ctxMLC.lineTo(drawEx, my);
+                    ctxMLC.stroke();
+
+                    const headLen = 6;
+                    const angle = Math.atan2(0, drawEx - mx);
+                    ctxMLC.beginPath();
+                    ctxMLC.moveTo(drawEx, my);
+                    ctxMLC.lineTo(drawEx - headLen * Math.cos(angle - Math.PI / 6), my - headLen * Math.sin(angle - Math.PI / 6));
+                    ctxMLC.lineTo(drawEx - headLen * Math.cos(angle + Math.PI / 6), my - headLen * Math.sin(angle + Math.PI / 6));
+                    ctxMLC.fillStyle = '#00ff00';
+                    ctxMLC.fill();
+
+                    ctxMLC.beginPath(); ctxMLC.arc(drawEx, my, 4, 0, Math.PI * 2); ctxMLC.fill();
+                }
+            }
+
+            // Legend
+            const legendX = mLeft + chW - 120;
+            const legendY = mTop + chH - 60;
+
+            ctxMLC.fillStyle = "rgba(0,0,0,0.7)";
+            ctxMLC.fillRect(legendX, legendY, 115, 55);
+            ctxMLC.strokeStyle = "#555";
+            ctxMLC.strokeRect(legendX, legendY, 115, 55);
+
+            ctxMLC.font = "10px sans-serif";
+            ctxMLC.textAlign = "left";
+
+            ctxMLC.fillStyle = "red";
+            ctxMLC.beginPath(); ctxMLC.arc(legendX + 10, legendY + 12, 3, 0, Math.PI * 2); ctxMLC.fill();
+            ctxMLC.fillStyle = "#ddd";
+            ctxMLC.fillText("Current State", legendX + 20, legendY + 15);
+
+            ctxMLC.strokeStyle = "#2196F3"; ctxMLC.lineWidth = 2;
+            ctxMLC.beginPath(); ctxMLC.moveTo(legendX + 5, legendY + 27); ctxMLC.lineTo(legendX + 15, legendY + 27); ctxMLC.stroke();
+            ctxMLC.fillStyle = "#ddd";
+            ctxMLC.fillText("Birefringence", legendX + 20, legendY + 30);
+
+            ctxMLC.strokeStyle = "#00ff00"; ctxMLC.lineWidth = 2;
+            ctxMLC.beginPath(); ctxMLC.moveTo(legendX + 5, legendY + 42); ctxMLC.lineTo(legendX + 15, legendY + 42); ctxMLC.stroke();
+            ctxMLC.fillStyle = "#00ff00";
+            ctxMLC.beginPath(); ctxMLC.arc(legendX + 15, legendY + 42, 2, 0, Math.PI * 2); ctxMLC.fill();
+            ctxMLC.fillStyle = "#ddd";
+            ctxMLC.fillText("Plate Shift", legendX + 20, legendY + 45);
+        }
+
+        /* --------------------------------------------------------------------------
+           7. MAIN UPDATE ROUTINE
+           -------------------------------------------------------------------------- */
+        function update() {
+            const rad = state.angle * (Math.PI / 180);
+            const cos = Math.cos(rad); const sin = Math.sin(rad);
+            const term = (cos * cos) / (state.nw * state.nw) + (sin * sin) / (state.ne * state.ne);
+            const nPrime = Math.sqrt(1 / term);
+
+            const bir = Math.abs(nPrime - state.nw);
+            const maxBir = Math.abs(state.ne - state.nw);
+
+            let arrowEPrimeColor = 0xff00ff; // magenta
+            if (Math.abs(state.angle - 0) < 1e-6) arrowEPrimeColor = 0x00ffff;
+            else if (Math.abs(state.angle - 90) < 1e-6) arrowEPrimeColor = 0xff1111;
+
+            arrowEPrime.traverse(child => {
+                if (child instanceof THREE.Mesh && child.material) child.material.color.set(arrowEPrimeColor);
+            });
+
+            // Relief
+            const a = state.nw * state.scaleFactor;
+            const b = nPrime * state.scaleFactor;
+            const phi = state.stage * (Math.PI / 180);
+            const denom = Math.sqrt((b * Math.cos(phi)) ** 2 + (a * Math.sin(phi)) ** 2);
+            const r_EW = denom > 0 ? (a * b) / denom : a;
+            const n_EW = r_EW / state.scaleFactor;
+            const diff = Math.abs(n_EW - 1.54);
+            const relief_width = 0.5 + diff * 30;
+
+            // Retardation
+            const retardation = state.thickness * bir * 1000;
+            const colorStr = getInterferenceColor(retardation);
+            const name = getOrderName(retardation);
+
+            let effectiveRet = retardation;
+            if (state.plateOn) {
+                const plateRet = 540;
+                const plateSlowAngle = 45;
+                const isEPrimeSlow = nPrime > state.nw;
+                let vibAngleOmega = state.stage % 180;
+                let vibAngleEPrime = (state.stage + 90) % 180;
+                const slowAngle = isEPrimeSlow ? vibAngleEPrime : vibAngleOmega;
+                let delta = Math.abs(slowAngle - plateSlowAngle) % 180;
+                delta = Math.min(delta, 180 - delta);
+                const isAdd = delta > 45;
+                effectiveRet = isAdd ? retardation + plateRet : Math.abs(retardation - plateRet);
+            }
+
+            // Sync UI values
+            document.getElementById('angleVal').innerText = state.angle.toFixed(1) + "°";
+            document.getElementById('thickVal').innerText = state.thickness + " µm";
+            document.getElementById('stageVal').innerText = state.stage.toFixed(0) + "°";
+            document.getElementById('appBir').innerText = bir.toFixed(4);
+            document.getElementById('maxBir').innerText = maxBir.toFixed(4);
+            document.getElementById('retVal').innerText = Math.round(retardation) + " nm";
+
+            const colBox = document.getElementById('interference-order-color');
+            if (colBox) colBox.style.backgroundColor = colorStr;
+            const colorInfo = getColorInfo(retardation);
+            const colorNameEl = document.getElementById('intColorName');
+            if (colorNameEl) colorNameEl.innerText = colorInfo.color;
+            const orderNameEl = document.getElementById('intOrderName');
+            if (orderNameEl) orderNameEl.innerText = colorInfo.order;
+            const textElement = document.getElementById('interference-order-text');
+            if (textElement) textElement.innerText = `${colorInfo.color} (${colorInfo.order})`;
+
+            // Gypsum plate overlay
+            const plateIcon = document.getElementById('plateOverlay');
+            if (plateIcon) {
+                if (state.analyzerOn && state.plateOn) plateIcon.classList.add('visible');
+                else plateIcon.classList.remove('visible');
+            }
+
+            // 3D indicatrix updates
+            const sX = state.nw * state.scaleFactor;
+            const sY = state.ne * state.scaleFactor;
+            indicatrixGroup.scale.set(sX, sY, sX);
+
+            const cutRot = (Math.PI / 2) - rad;
+            planeGroup.rotation.x = cutRot;
+
+            const rX_cut = state.nw * state.scaleFactor;
+            const rY_cut = nPrime * state.scaleFactor;
+            planeMesh.scale.set(rX_cut, rY_cut, 1);
+
+            const intersectionPoints = [];
+            const segs = 128;
+            for (let i = 0; i <= segs; i++) {
+                const theta = (i / segs) * Math.PI * 2;
+                intersectionPoints.push(new THREE.Vector3(rX_cut * Math.cos(theta), rY_cut * Math.sin(theta), 0.01));
+            }
+            cutOutline.geometry.setFromPoints(intersectionPoints);
+
+            const center = indicatrixGroup.position.clone();
+            basalSection.position.copy(center);
+            basalSection.rotation.set(Math.PI / 2, 0, Math.PI);
+            basalSection.scale.set(sX, sX, 1);
+
+            principalSection.position.copy(center);
+            principalSection.rotation.set(0, 0, Math.PI);
+            principalSection.scale.set(sX, sY, 1);
+
+            arrowOmega.position.set(0, 0, 0);
+            arrowOmega.rotation.set(0, 0, 0);
+            arrowOmega.scale.set(rX_cut, rX_cut, rX_cut);
+            arrowOmega.rotation.z = Math.PI / 2;
+
+            arrowEPrime.position.set(0, 0, 0);
+            arrowEPrime.rotation.set(0, 0, 0);
+            arrowEPrime.scale.set(rY_cut, rY_cut, rY_cut);
+
+            arrowEpsilon.position.set(0, 0, 0);
+            arrowEpsilon.rotation.set(0, 0, 0);
+            arrowEpsilon.scale.set(1, 1, 1);
+
+            // Redraw 2D previews
+            drawInd2D(state.nw, nPrime);
+            drawMicroscope(bir, state.system, state.angle, relief_width);
+            drawMLChart(retardation, state.thickness, bir, state.plateOn, effectiveRet);
+        }
+
+        /* --------------------------------------------------------------------------
+           8. MINERAL ROTATION VIA POINTER DRAG ON MICROSCOPE CANVAS
+           -------------------------------------------------------------------------- */
+        let draggingStage = false;
+        let lastAngle = 0;
+
+        function startStageDrag(e, canvas) {
+            draggingStage = true;
+            const rect = canvas.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            lastAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
+            canvas.setPointerCapture(e.pointerId);
+        }
+
+        function moveStage(e, canvas) {
+            if (!draggingStage) return;
+            const rect = canvas.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const curAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
+
+            let delta = (curAngle - lastAngle) * 180 / Math.PI;
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
+
+            state.stage = (state.stage + delta + 360) % 360;
+            lastAngle = curAngle;
+
+            document.getElementById('stageSlide').value = state.stage;
+            document.getElementById('stageVal').innerText = state.stage.toFixed(0) + "°";
+            update();
+        }
+
+        function stopStageDrag(e, canvas) {
+            draggingStage = false;
+            try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+        }
+
+        if (cvMicro) {
+            cvMicro.addEventListener('pointerdown', e => startStageDrag(e, cvMicro));
+            cvMicro.addEventListener('pointermove', e => moveStage(e, cvMicro));
+            cvMicro.addEventListener('pointerup', e => stopStageDrag(e, cvMicro));
+            cvMicro.addEventListener('pointercancel', e => stopStageDrag(e, cvMicro));
+        }
+
+        /* --------------------------------------------------------------------------
+           9. EVENT BINDINGS & CONTROLS
+           -------------------------------------------------------------------------- */
+        document.getElementById('presetSel').addEventListener('change', e => {
+            const val = e.target.value;
+            if (val !== 'Custom') {
+                const m = minerals[val];
+                state.nw = m.nw; state.ne = m.ne; state.system = m.sys;
+                state.colW = m.colW; state.colE = m.colE;
+                document.getElementById('nwIn').value = m.nw;
+                document.getElementById('neIn').value = m.ne;
+                const sign = state.ne > state.nw ? 'Uniaxial (+)' : state.ne < state.nw ? 'Uniaxial (-)' : 'Isotropic';
+                document.getElementById('optSignBadge').innerText = sign;
+                update();
+            }
+        });
+
+        ['nwIn', 'neIn'].forEach(id => {
+            document.getElementById(id).addEventListener('input', e => {
+                if (id === 'nwIn') state.nw = parseFloat(e.target.value) || 1.0;
+                if (id === 'neIn') state.ne = parseFloat(e.target.value) || 1.0;
+                document.getElementById('presetSel').value = 'Custom';
+                state.system = 'zircon'; state.colW = minerals.Custom.colW; state.colE = minerals.Custom.colE;
+                const sign = state.ne > state.nw ? 'Uniaxial (+)' : state.ne < state.nw ? 'Uniaxial (-)' : 'Isotropic';
+                document.getElementById('optSignBadge').innerText = sign;
+                update();
+            });
+        });
+
+        window.setCutAngle = function(a) {
+            state.angle = a;
+            document.getElementById('angleSlide').value = a;
+            update();
+        };
+
+        window.setThickness = function(t) {
+            state.thickness = t;
+            document.getElementById('thickSlide').value = t;
+            update();
+        };
+
+        document.getElementById('angleSlide').addEventListener('input', e => { state.angle = parseFloat(e.target.value); update(); });
+        document.getElementById('thickSlide').addEventListener('input', e => { state.thickness = parseFloat(e.target.value); update(); });
+        document.getElementById('stageSlide').addEventListener('input', e => { state.stage = parseFloat(e.target.value); update(); });
+
+        document.getElementById('zoomSlider').addEventListener('input', e => {
+            state.scaleFactor = parseFloat(e.target.value);
+            document.getElementById('zoomVal').innerText = `${state.scaleFactor.toFixed(2)}x`;
+            update();
+        });
+
+        // Analyzer switch toggle (identical switch style to accessory plate)
+        const analyzerCheck = document.getElementById('analyzerCheck');
+        if (analyzerCheck) {
+            analyzerCheck.addEventListener('change', e => {
+                state.analyzerOn = e.target.checked;
+                document.getElementById('microModeLabel').innerText = state.analyzerOn ? 'XPL View' : 'PPL View';
+                document.getElementById('microBox').style.background = state.analyzerOn ? '#000' : '#eee';
+                update();
+            });
+        }
+
+        document.getElementById('plateCheck').addEventListener('change', e => {
+            state.plateOn = e.target.checked;
+            update();
+        });
+
+        document.getElementById('zoomBoundaryBtn').addEventListener('change', e => {
+            state.zoomGrain = e.target.checked;
+            update();
+        });
+
+        window.addEventListener('resize', () => {
+            if (view3d) {
+                const w = view3d.clientWidth || 300;
+                const h = view3d.clientHeight || 200;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+            mlcCache = null;
+            update();
+        });
+
+        // Lab Notes
+        const notesArea = document.getElementById('labNotesArea');
+        const NOTES_KEY = 'vplm_lab_notebook_content';
+        const savedNotes = localStorage.getItem(NOTES_KEY);
+        if (savedNotes) {
+            notesArea.value = savedNotes;
+        } else {
+            notesArea.value = `# Optical Mineralogy Lab Notes\nDate: ${new Date().toLocaleDateString()}\n\n`;
+        }
+
+        notesArea.addEventListener('input', () => {
+            localStorage.setItem(NOTES_KEY, notesArea.value);
+        });
+
+        document.getElementById('logObservationBtn').addEventListener('click', () => {
+            const mineralName = document.getElementById('presetSel').value;
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const rad = state.angle * (Math.PI / 180);
+            const cos = Math.cos(rad); const sin = Math.sin(rad);
+            const term = (cos * cos) / (state.nw * state.nw) + (sin * sin) / (state.ne * state.ne);
+            const nPrime = Math.sqrt(1 / term);
+            const bir = Math.abs(nPrime - state.nw);
+            const ret = Math.round(state.thickness * bir * 1000);
+            const colName = getOrderName(ret);
+
+            const logEntry = `\n----------------------------------------\n` +
+                `[${timeStr}] Mineral: ${mineralName}\n` +
+                `• nω = ${state.nw.toFixed(4)}, nε = ${state.ne.toFixed(4)}\n` +
+                `• Cut Angle: ${state.angle.toFixed(1)}° | Thickness: ${state.thickness} µm\n` +
+                `• Apparent Birefringence (δ'): ${bir.toFixed(4)}\n` +
+                `• Retardation (Γ): ${ret} nm -> Color: ${colName}\n` +
+                `• Mineral Rotation: ${state.stage.toFixed(0)}° | Mode: ${state.analyzerOn ? 'XPL' : 'PPL'}\n` +
+                `• Accessory Plate: ${state.plateOn ? 'ON (540nm)' : 'OFF'}\n` +
+                `• Notes: \n`;
+
+            notesArea.value += logEntry;
+            notesArea.scrollTop = notesArea.scrollHeight;
+            localStorage.setItem(NOTES_KEY, notesArea.value);
+            wm.open('win-notes');
+        });
+
+        document.getElementById('exportNotesBtn').addEventListener('click', () => {
+            const blob = new Blob([notesArea.value], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `VIRTUAL-PLM-Notes-${new Date().toISOString().slice(0, 10)}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('clearNotesBtn').addEventListener('click', () => {
+            if (confirm("Clear your notes?")) {
+                notesArea.value = `# Optical Mineralogy Lab Notes\nDate: ${new Date().toLocaleDateString()}\n\n`;
+                localStorage.setItem(NOTES_KEY, notesArea.value);
+            }
+        });
+
+        /* --------------------------------------------------------------------------
+           10. ANIMATION LOOP & INIT
+           -------------------------------------------------------------------------- */
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        wm.adjustMicroscopeSquare();
+        update();
+        animate();
+    </script>
+</body>
+
+</html>
