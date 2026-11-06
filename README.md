@@ -10,7 +10,7 @@ You can download it and open it in any modern browser - on a computer, tablet, o
 ---
 
 ## 0. Installation and launch
-Online: [LINK](https://yakovyermakov.github.io/VIRTUAL-PLM/)
+Online: [LINK](https://yakovyermakov.github.io/VIRTUAL-PLM/)  
 Offline:
 1. [Download](https://github.com/YakovYermakov/VIRTUAL-PLM/blob/main/indicatrix_v0.8.html) .html file from repository for offline use.
 2. Open in any browser.
