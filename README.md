@@ -5,9 +5,10 @@ VIRTUAL-PLM is a lightweight HTML tool designed to help you understand how visib
 
 The idea for this project came from my experience teaching Optical Mineralogy to undergraduate students, many of whom struggled with concepts such as the indicatrix and birefringence. This tool aims to make these topics more intuitive through an interactive, visual environment.
 The entire application runs as a single, self-contained webpage.
-You can download it and open it in any modern browser - on a computer, tablet, or even a phone (although I strongly recommend using a larger screen).
+You can see it online, or download it and open in any browser - on a computer, tablet, or even a phone (although I strongly recommend using laptop).
 
-<!-- Image: [Overview of the Workspace Layout] -->
+<img width="1911" height="1051" alt="image" src="https://github.com/user-attachments/assets/71cf2a7e-8f43-4543-ae6e-ed715411201b" />
+
 
 ---
 
@@ -24,8 +25,6 @@ Offline:
 ---
 
 ## 1. Mineral Parameters
-
-<!-- Image: [Mineral Parameters Window] -->
 
 Here you can customize the mineral optical properties or choose from built-in uniaxial minerals:
 - Zircon
@@ -44,7 +43,6 @@ Each preset provides refractive indices and realistic mineral appearances in the
 
 ## 2. Indicatrix
 
-<!-- Image: [Indicatrix View] -->
 
 The 3D Indicatrix window displays the 3D indicatrix generated from the mineral’s refractive indices.
 Currently, the tool supports isotropic and uniaxial indicatrices (biaxial support will be added in upcoming updates). 
@@ -63,7 +61,6 @@ Below the 3D scene, you can adjust the **Indicatrix Cut Angle** (from 0° to 90�
 
 ## 3. Michel-Lévy Chart
 
-<!-- Image: [Michel-Lévy Chart Window] -->
 
 The Michel-Lévy Chart window features an interactive interference color chart calculated following Sørensen (2012).
 Key features include:
@@ -82,8 +79,6 @@ This module helps visualize how birefringence and thickness combine to produce o
 
 ## 4. Microscope Simulation (PPL & XPL)
 
-<!-- Image: [Microscope View] -->
-
 The Microscope View simulates the appearance of a mineral grain under polarized light microscopy:
 - **PPL & XPL Modes:** A toggle button switches seamlessly between Plane-Polarized Light (PPL) and Cross-Polarized Light (XPL).
 - **Virtual Stage Rotation:** Smooth rotation slider (0° to 360°) as well as direct interactive click-and-drag rotation on the microscope canvas.
@@ -98,7 +93,8 @@ The Microscope View simulates the appearance of a mineral grain under polarized 
 
 ## 5. Theory & Lab Notes
 
-<!-- Image: [Optics Theory & Lab Notes Windows] -->
+<img width="1010" height="581" alt="image" src="https://github.com/user-attachments/assets/d6c2e9d0-147d-4702-8204-0d7f5761b40d" />
+
 
 VIRTUAL-PLM includes built-in learning and observation tools accessible from the sidebar:
 - **Optics Theory:** A dedicated reference panel detailing key equations:
