@@ -33,29 +33,27 @@ Here you can customize the mineral optical properties or choose from built-in un
 - Tourmaline
 - Apatite
 - Nepheline
-- Custom
 
 Each preset provides refractive indices and realistic mineral appearances in the microscope view (relief, PPL colors, and pleochroism).
-- **Refractive Index Sliders:** Smooth sliders for $n_\omega$ (Ordinary RI) and $n_\varepsilon$ (Extraordinary RI) ranging from 1.000 to 2.000 (step 0.001) with live numerical readouts and optic sign detection (Uniaxial (+), Uniaxial (−), or Isotropic).
-- **Thickness Slider:** Adjust sample thickness from 5 to 50 µm with quick presets for 20 µm, 30 µm (Standard thin section), and 50 µm.
+- **Refractive Index:** Change refractive indices $n_\omega$ (Ordinary RI) and $n_\varepsilon$ (Extraordinary RI) to make your own indicatrix.
+- **Thickness:** Adjust sample thickness with quick presets for 20 µm, 30 µm (Standard thin section), and 50 µm.
 
 ---
 
 ## 2. Indicatrix
 
 
-The 3D Indicatrix window displays the 3D indicatrix generated from the mineral’s refractive indices.
+The Indicatrix window displays the 3D indicatrix generated from the mineral’s refractive indices.
 Currently, the tool supports isotropic and uniaxial indicatrices (biaxial support will be added in upcoming updates). 
 This view also displays:
 - the ordinary ($n_\omega$) and apparent extraordinary ($n_\varepsilon'$) vibration directions,
 - the cutting plane representing the mineral’s orientation in thin section,
 - the basal and principal reference sections,
 - the optic axis ($c$-axis),
-- an interactive collapsible **Legend** on the upper-left,
 - a 2D preview of the current cut, shown in the small circular window in the upper-right corner.
 
 The 2D preview updates dynamically as you modify the cut angle or rotate the mineral stage.
-Below the 3D scene, you can adjust the **Indicatrix Cut Angle** (from 0° to 90° with quick presets for Basal 0°, 45° Cut, and Principal 90°), zoom the setup with the slider, or click **Reset View** to return to the default 3D camera angle.
+Here, you can adjust the **Indicatrix Cut Angle** (from 0° to 90° with quick presets for Basal 0°, 45° Cut, and Principal 90°).
 
 ---
 
@@ -64,11 +62,9 @@ Below the 3D scene, you can adjust the **Indicatrix Cut Angle** (from 0° to 90�
 
 The Michel-Lévy Chart window features an interactive interference color chart calculated following Sørensen (2012).
 Key features include:
-- A dynamic cursor (red dot and reference crosslines) showing the exact retardation and birefringence coordinates for the current mineral state.
-- Dynamic responsive axis scaling (retardation from 0 to 1800 nm, thickness from 0 to 50 µm).
-- In-chart legend indicating the current state, birefringence line, and accessory plate shift.
+- A dynamic cursor showing the exact retardation and birefringence coordinates for the current mineral state.
 - A live metrics panel below the chart displaying:
-  - Color swatch and interference order name (e.g., *Light yellow 1st order*)
+  - Color swatch and interference color
   - Apparent Birefringence ($\delta'$)
   - Retardation ($\Gamma$)
   - Maximum Birefringence ($|n_\varepsilon - n_\omega|$)
@@ -80,13 +76,13 @@ This module helps visualize how birefringence and thickness combine to produce o
 ## 4. Microscope Simulation (PPL & XPL)
 
 The Microscope View simulates the appearance of a mineral grain under polarized light microscopy:
-- **PPL & XPL Modes:** A toggle button switches seamlessly between Plane-Polarized Light (PPL) and Cross-Polarized Light (XPL).
-- **Virtual Stage Rotation:** Smooth rotation slider (0° to 360°) as well as direct interactive click-and-drag rotation on the microscope canvas.
+- **PPL & XPL Modes:** A toggle button switches between Plane-Polarized Light (PPL) and Cross-Polarized Light (XPL).
+- **Stage Rotation:** Smooth rotation slider (0° to 360°) as well as direct interactive click-and-drag rotation.
 - **Pleochroism & PPL Color:** Mineral grain color dynamically reflects pleochroic absorption during stage rotation.
 - **Relief:** Grain boundary relief adjusts according to the refractive index contrast with the mounting medium.
-- **Grain Geometry & Extinction:** Realistic crystallographic grain shapes with parallel extinction for uniaxial minerals.
+- **Grain Geometry** Realistic crystallographic grain shapes.
 - **Boundary Taper:** Thickness tapers near the grain boundary to reproduce realistic edge interference fringes.
-- **Accessory Plate (Gypsum 540 nm):** Toggle button inserts a first-order red accessory plate with an animated visual indicator to observe interference color addition (enhancement) and subtraction (compensation).
+- **Accessory Plate (Gypsum 540 nm):** Toggle button inserts a first-order red accessory plate to observe interference color addition (enhancement) and subtraction (compensation).
 - **Zoom to Grain Boundary:** Toggle switch to inspect grain boundary color transitions in high magnification.
 
 ---
@@ -97,15 +93,8 @@ The Microscope View simulates the appearance of a mineral grain under polarized 
 
 
 VIRTUAL-PLM includes built-in learning and observation tools accessible from the sidebar:
-- **Optics Theory:** A dedicated reference panel detailing key equations:
-  - Apparent birefringence: $\delta' = |n_\varepsilon' - n_\omega|$
-  - Retardation: $\Gamma = d \times \delta' \times 1000$
-  - Fast vs. Slow rays (velocity vs. refractive index)
-  - Accessory plate rules for interference color shift
-  - Variable color coding directly mapped to the 3D indicatrix rays and Michel-Lévy metrics.
-- **Lab Notes:** A digital laboratory notebook allowing you to record observations. Click **Log Current Reading** to instantly append all current mineral parameters, rotation angle, and retardation values. Notes are automatically saved in local browser storage.
-- **Window Management:** Movable, resizable, and minimizable windows with **Tile Windows** and **Reset Workspace** buttons to optimize screen layout.
-
+- **Optics Theory:** A panel with equations and hints. 
+- **Lab Notes:** A digital notebook allowing you to record observations.
 ---
 
 ## 6. References
