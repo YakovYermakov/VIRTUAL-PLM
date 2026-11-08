@@ -1127,7 +1127,7 @@
          MAIN WORKSPACE CANVAS
          ========================================================================== -->
     <main id="workspace">
-        <!-- Exact credits line from previous version -->
+        <!-- Credits -->
         <div id="credits">Made by: Yakov Yermakov, 2025</div>
 
         <!-- ====================================================================
@@ -1226,13 +1226,13 @@
             </div>
             <div class="win-body" style="overflow:hidden;">
                 <div id="view3d">
-                    <!-- 2D Cut Overlay (Restored 150x150 PiP) -->
+                    <!-- 2D Cut Preview Overlay -->
                     <div id="indOverlay">
                         <canvas id="canvasInd"></canvas>
                         <div class="crosshair-overlay"></div>
                     </div>
 
-                    <!-- Legend (Accordion on same side, shown by default, collapses on click) -->
+                    <!-- Legend Accordion -->
                     <div id="legend3d">
                         <div class="legend3d-header" id="legend3dHeader" title="Click to show/hide Legend">
                             <span>Legend</span>
@@ -1250,14 +1250,14 @@
                     </div>
                 </div>
 
-                <!-- Indicatrix Controls Bar: Indicatrix Cut Angle changer + Zoom -->
+                <!-- Indicatrix Controls Bar -->
                 <div class="ind3d-controls-bar">
                     <div class="control-group" style="margin-bottom:6px;">
                         <label>
                             <span>Indicatrix Cut Angle</span>
-                            <span id="angleVal" style="color:var(--accent);">45.0°</span>
+                            <span id="angleVal" style="color:var(--accent);">75.0°</span>
                         </label>
-                        <input type="range" id="angleSlide" min="0" max="90" step="0.5" value="45">
+                        <input type="range" id="angleSlide" min="0" max="90" step="0.5" value="75">
                         <div class="pill-group">
                             <button class="pill-btn" onclick="setCutAngle(0)">Basal (0°)</button>
                             <button class="pill-btn" onclick="setCutAngle(45)">45° Cut</button>
@@ -1304,10 +1304,10 @@
             <div class="win-body">
                 <!-- Single Square Microscope Viewport -->
                 <div class="microscope-wrap" id="microWrap">
-                    <div class="microscope-square-box" id="microBox">
+                    <div class="microscope-square-box" id="microBox" style="background:#000;">
                         <canvas id="canvasMicroscope"></canvas>
                         <div class="crosshair-overlay"></div>
-                        <div class="micro-mode-label" id="microModeLabel">PPL View</div>
+                        <div class="micro-mode-label" id="microModeLabel">XPL View</div>
 
                         <!-- Gypsum Plate SVG Indicator -->
                         <div id="plateOverlay">
@@ -1337,12 +1337,12 @@
                         <input type="range" id="stageSlide" min="0" max="360" step="1" value="45">
                     </div>
 
-                    <!-- Toggles: Analyzer (matching switch style), Accessory Plate, Zoom -->
+                    <!-- Microscope Toggles -->
                     <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.8rem; color:var(--text-main); margin-top:6px; align-items:center;">
                         <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
                             <span>Analyzer (XPL):</span>
                             <label class="switch">
-                                <input type="checkbox" id="analyzerCheck">
+                                <input type="checkbox" id="analyzerCheck" checked>
                                 <span class="slider"></span>
                             </label>
                         </label>
@@ -1397,9 +1397,9 @@
                 <div id="mlc-container">
                     <canvas id="canvasMLC"></canvas>
                 </div>
-                <!-- Interference color swatch + Apparent Bir + Retardation + Max Bir (2-line layout) -->
+                <!-- Interference Metrics Row -->
                 <div id="interference-order-display">
-                    <!-- 1. Interference Color: Color on line 1, Order on line 2 -->
+                    <!-- 1. Interference Color -->
                     <div class="mlc-stat-col">
                         <div class="mlc-stat-line1">
                             <div id="interference-order-color"></div>
@@ -1414,7 +1414,7 @@
 
                     <div class="mlc-stat-sep"></div>
 
-                    <!-- 2. Apparent Birefringence: Label on line 1, Number on line 2 -->
+                    <!-- 2. Apparent Birefringence -->
                     <div class="mlc-stat-col">
                         <div class="mlc-stat-line1">
                             <span class="mlc-stat-label">Apparent Birefringence (δ')</span>
@@ -1426,7 +1426,7 @@
 
                     <div class="mlc-stat-sep"></div>
 
-                    <!-- 3. Retardation: Label on line 1, Number on line 2 -->
+                    <!-- 3. Retardation -->
                     <div class="mlc-stat-col">
                         <div class="mlc-stat-line1">
                             <span class="mlc-stat-label">Retardation (Γ)</span>
@@ -1438,7 +1438,7 @@
 
                     <div class="mlc-stat-sep"></div>
 
-                    <!-- 4. Max Birefringence: Label on line 1, Number on line 2 -->
+                    <!-- 4. Max Birefringence -->
                     <div class="mlc-stat-col">
                         <div class="mlc-stat-line1">
                             <span class="mlc-stat-label">Max Birefringence</span>
@@ -1587,7 +1587,6 @@
         })();
     </script>
 
-    <!-- (Guide/Help modal replaced with Theory window) -->
 
     <!-- ==========================================================================
          JAVASCRIPT CODE
@@ -2007,13 +2006,13 @@
         wm.register('win-theory',     { x: 750, y: 520, w: 400, h: 420 }, false);
         wm.register('win-notes',      { x: 1165,y: 520, w: 340, h: 420 }, false);
 
-        // Tile by default on page load so blocks take the whole page of the browser
+        // Initial layout tiling on load
         requestAnimationFrame(() => {
             wm.tile();
             setTimeout(() => wm.tile(), 80);
         });
 
-        // 3D Legend accordion toggle on click
+        // Legend accordion toggle
         const leg3d = document.getElementById('legend3d');
         if (leg3d) {
             leg3d.addEventListener('click', () => {
@@ -2293,14 +2292,14 @@
         const state = {
             nw: Zircon.nw,
             ne: Zircon.ne,
-            angle: 45,
+            angle: 75,
             thickness: 30,
             stage: 45,
             scaleFactor: 1.0,
             system: Zircon.sys,
             colW: Zircon.colW,
             colE: Zircon.colE,
-            analyzerOn: false,   // false = PPL mode, true = XPL mode
+            analyzerOn: true,    // true = XPL mode, false = PPL mode
             plateOn: false,      // accessory plate toggle
             zoomGrain: false
         };
@@ -2320,7 +2319,7 @@
             return { w: rect.width, h: rect.height };
         }
 
-        /* 2D Cut Ellipse Preview (Exact v0.7 with numbers on axes) */
+        /* 2D Cut Ellipse Preview */
         function drawInd2D(rx, ry) {
             if (!ctxInd) return;
             const { w, h } = resizeCanvas(cvInd, ctxInd);
@@ -2987,7 +2986,7 @@
             update();
         });
 
-        // Analyzer switch toggle (identical switch style to accessory plate)
+        // Analyzer switch toggle
         const analyzerCheck = document.getElementById('analyzerCheck');
         if (analyzerCheck) {
             analyzerCheck.addEventListener('change', e => {
