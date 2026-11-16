@@ -17,7 +17,7 @@ Online:
 [LINK](https://yakovyermakov.github.io/VIRTUAL-PLM/)  
   
 Offline:
-1. [Download](https://github.com/YakovYermakov/VIRTUAL-PLM/blob/main/indicatrix_v1.0.html) .html file from repository for offline use.
+1. [Download](https://github.com/YakovYermakov/VIRTUAL-PLM/blob/main/indicatrix_v1.5.html) .html file from repository for offline use.
 2. Open in any browser.
 3. Enjoy!
 4. May not open properly on iPad, so it is recommended to use a laptop.

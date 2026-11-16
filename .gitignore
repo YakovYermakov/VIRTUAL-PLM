@@ -1,0 +1,16 @@
+# Scratch & temporary development scripts/frames
+scratch/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Editor / IDE configuration
+.vscode/
+.idea/
